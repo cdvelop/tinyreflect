@@ -21,7 +21,7 @@ type refValue struct {
 	flag refFlag        // Reflection flags for memory layout
 
 	// ESSENTIAL: Core operation fields only
-	vTpe         kind      // Type cache for performance (redundant with flag but kept for compatibility)
+	kind         kind      // Type cache for performance (redundant with flag but kept for compatibility)
 	roundDown    bool      // Operation flags
 	separator    string    // String operations
 	tmpStr       string    // String cache for performance
@@ -80,7 +80,7 @@ func (c *refValue) Type() *refType {
 func (c *refValue) refElem() *refValue {
 	k := c.refKind()
 	switch k {
-	case tpInterface:
+	case KInterface:
 		var eface refEface
 		if c.typ.kind&kindDirectIface != 0 {
 			eface = refEface{typ: nil, data: c.ptr}
@@ -98,7 +98,7 @@ func (c *refValue) refElem() *refValue {
 			result.flag |= flagIndir
 		}
 		return result
-	case tpPointer:
+	case KPointer:
 		// Handle pointer dereferencing
 		var ptr unsafe.Pointer
 		if c.flag&flagIndir != 0 {
@@ -136,14 +136,14 @@ func (c *refValue) refElem() *refValue {
 
 // refNumField returns the number of fields in the struct c
 func (c *refValue) refNumField() int {
-	c.mustBe(tpStruct)
+	c.mustBe(KStruct)
 	tt := (*refStructMeta)(unsafe.Pointer(c.typ))
 	return len(tt.fields)
 }
 
 // refField returns the i'th field of the struct c
 func (c *refValue) refField(i int) *refValue {
-	if c.refKind() != tpStruct {
+	if c.refKind() != KStruct {
 		panic("reflect: call of reflect.Value.Field on " + c.refKind().String() + " value")
 	}
 	tt := (*refStructMeta)(unsafe.Pointer(c.typ))
@@ -157,7 +157,7 @@ func (c *refValue) refField(i int) *refValue {
 	// For struct fields, flagIndir is needed only for pointer fields
 	// because ptr points to the field location containing the pointer.
 	// For other field types, ptr points directly to the field value.
-	if field.typ.Kind() == tpPointer {
+	if field.typ.Kind() == KPointer {
 		fl |= flagIndir
 	}
 
@@ -171,7 +171,7 @@ func (c *refValue) refField(i int) *refValue {
 // refSetString sets c's underlying value to x
 func (c *refValue) refSetString(x string) {
 	c.mustBeAssignable()
-	c.mustBe(tpString)
+	c.mustBe(KString)
 	ptr := c.ptr
 	if c.flag&flagIndir != 0 {
 		ptr = *(*unsafe.Pointer)(ptr)
@@ -187,15 +187,15 @@ func (c *refValue) refSetInt(x int64) {
 		ptr = *(*unsafe.Pointer)(ptr)
 	}
 	switch c.refKind() {
-	case tpInt:
+	case KInt:
 		*(*int)(ptr) = int(x)
-	case tpInt8:
+	case KInt8:
 		*(*int8)(ptr) = int8(x)
-	case tpInt16:
+	case KInt16:
 		*(*int16)(ptr) = int16(x)
-	case tpInt32:
+	case KInt32:
 		*(*int32)(ptr) = int32(x)
-	case tpInt64:
+	case KInt64:
 		*(*int64)(ptr) = x
 	default:
 		panic("reflect: call of reflect.Value.SetInt on " + c.refKind().String() + " value")
@@ -210,17 +210,17 @@ func (c *refValue) refSetUint(x uint64) {
 		ptr = *(*unsafe.Pointer)(ptr)
 	}
 	switch c.refKind() {
-	case tpUint:
+	case KUint:
 		*(*uint)(ptr) = uint(x)
-	case tpUint8:
+	case KUint8:
 		*(*uint8)(ptr) = uint8(x)
-	case tpUint16:
+	case KUint16:
 		*(*uint16)(ptr) = uint16(x)
-	case tpUint32:
+	case KUint32:
 		*(*uint32)(ptr) = uint32(x)
-	case tpUint64:
+	case KUint64:
 		*(*uint64)(ptr) = x
-	case tpUintptr:
+	case KUintptr:
 		*(*uintptr)(ptr) = uintptr(x)
 	default:
 		c.err = errorType("reflect: call of reflect.Value.SetUint on " + c.refKind().String() + " value")
@@ -235,9 +235,9 @@ func (c *refValue) refSetFloat(x float64) {
 		ptr = *(*unsafe.Pointer)(ptr)
 	}
 	switch c.refKind() {
-	case tpFloat32:
+	case KFloat32:
 		*(*float32)(ptr) = float32(x)
-	case tpFloat64:
+	case KFloat64:
 		*(*float64)(ptr) = x
 	default:
 		c.err = errorType("reflect: call of reflect.Value.SetFloat on " + c.refKind().String() + " value")
@@ -247,7 +247,7 @@ func (c *refValue) refSetFloat(x float64) {
 // refSetBool sets c's underlying value to x
 func (c *refValue) refSetBool(x bool) {
 	c.mustBeAssignable()
-	c.mustBe(tpBool)
+	c.mustBe(KBool)
 	ptr := c.ptr
 	if c.flag&flagIndir != 0 {
 		ptr = *(*unsafe.Pointer)(ptr)
@@ -269,10 +269,10 @@ func (c *refValue) refSet(x *refValue) {
 	}
 
 	// For pointer types, we need to copy the pointer value itself
-	if c.refKind() == tpPointer {
+	if c.refKind() == KPointer {
 		// c.ptr points to the pointer variable
 		// We need to set the pointer variable to the value that x represents
-		if x.refKind() == tpPointer {
+		if x.refKind() == KPointer {
 			// Copy pointer value from x to c
 			*(*unsafe.Pointer)(c.ptr) = *(*unsafe.Pointer)(x.ptr)
 		} else {
@@ -294,11 +294,11 @@ func refZero(typ *refType) *refValue {
 	c := &refValue{separator: "_"}
 
 	// For pointer types, zero value is nil pointer
-	if typ.Kind() == tpPointer {
+	if typ.Kind() == KPointer {
 		var nilPtr unsafe.Pointer // This is nil
 		c.typ = typ
 		c.ptr = unsafe.Pointer(&nilPtr)
-		c.flag = refFlag(tpPointer)
+		c.flag = refFlag(KPointer)
 		return c
 	}
 
@@ -401,15 +401,15 @@ func (c *refValue) refInt() int64 {
 	}
 
 	switch k := c.refKind(); k {
-	case tpInt:
+	case KInt:
 		return int64(*(*int)(ptr))
-	case tpInt8:
+	case KInt8:
 		return int64(*(*int8)(ptr))
-	case tpInt16:
+	case KInt16:
 		return int64(*(*int16)(ptr))
-	case tpInt32:
+	case KInt32:
 		return int64(*(*int32)(ptr))
-	case tpInt64:
+	case KInt64:
 		return *(*int64)(ptr)
 	default:
 		c.err = errorType("reflect: call of reflect.Value.Int on " + c.refKind().String() + " value")
@@ -429,17 +429,17 @@ func (c *refValue) refUint() uint64 {
 	}
 
 	switch k := c.refKind(); k {
-	case tpUint:
+	case KUint:
 		return uint64(*(*uint)(ptr))
-	case tpUint8:
+	case KUint8:
 		return uint64(*(*uint8)(ptr))
-	case tpUint16:
+	case KUint16:
 		return uint64(*(*uint16)(ptr))
-	case tpUint32:
+	case KUint32:
 		return uint64(*(*uint32)(ptr))
-	case tpUint64:
+	case KUint64:
 		return *(*uint64)(ptr)
-	case tpUintptr:
+	case KUintptr:
 		return uint64(*(*uintptr)(ptr))
 	default:
 		c.err = errorType("reflect: call of reflect.Value.Uint on " + c.refKind().String() + " value")
@@ -459,9 +459,9 @@ func (c *refValue) refFloat() float64 {
 	}
 
 	switch k := c.refKind(); k {
-	case tpFloat32:
+	case KFloat32:
 		return float64(*(*float32)(ptr))
-	case tpFloat64:
+	case KFloat64:
 		return *(*float64)(ptr)
 	default:
 		c.err = errorType("reflect: call of reflect.Value.Float on " + c.refKind().String() + " value")
@@ -475,7 +475,7 @@ func (c *refValue) refBool() bool {
 		return false
 	}
 
-	c.mustBe(tpBool)
+	c.mustBe(KBool)
 	if c.err != "" {
 		return false
 	}
@@ -498,7 +498,7 @@ func (c *refValue) refString() string {
 	}
 
 	// Don't enforce mustBe() - allow reading strings from struct fields
-	if c.refKind() != tpString {
+	if c.refKind() != KString {
 		return ""
 	}
 
@@ -520,37 +520,37 @@ func (c *refValue) Interface() any {
 	}
 
 	switch c.refKind() {
-	case tpString:
+	case KString:
 		return c.refString()
-	case tpInt:
+	case KInt:
 		return int(c.refInt())
-	case tpInt8:
+	case KInt8:
 		return int8(c.refInt())
-	case tpInt16:
+	case KInt16:
 		return int16(c.refInt())
-	case tpInt32:
+	case KInt32:
 		return int32(c.refInt())
-	case tpInt64:
+	case KInt64:
 		return c.refInt()
-	case tpUint:
+	case KUint:
 		return uint(c.refUint())
-	case tpUint8:
+	case KUint8:
 		return uint8(c.refUint())
-	case tpUint16:
+	case KUint16:
 		return uint16(c.refUint())
-	case tpUint32:
+	case KUint32:
 		return uint32(c.refUint())
-	case tpUint64:
+	case KUint64:
 		return c.refUint()
-	case tpUintptr:
+	case KUintptr:
 		return uintptr(c.refUint())
-	case tpFloat32:
+	case KFloat32:
 		return float32(c.refFloat())
-	case tpFloat64:
+	case KFloat64:
 		return c.refFloat()
-	case tpBool:
+	case KBool:
 		return c.refBool()
-	case tpInterface:
+	case KInterface:
 		// For interface{} types, extract the contained value directly
 		var eface refEface
 		if c.typ.kind&kindDirectIface != 0 {
@@ -564,7 +564,7 @@ func (c *refValue) Interface() any {
 
 		// Create a new interface{} with the contained value
 		return *(*any)(unsafe.Pointer(&eface))
-	case tpStruct: // For struct types, create an interface{} with the struct value
+	case KStruct: // For struct types, create an interface{} with the struct value
 		// The struct data is stored at c.ptr
 		var eface refEface
 		eface.typ = c.typ
@@ -588,7 +588,7 @@ var refStructsTypesMutex sync.RWMutex
 
 // getStructType fills struct information if not cached, assigns to provided pointer
 func getStructType(typ *refType, out *refStructType) {
-	if typ.Kind() != tpStruct {
+	if typ.Kind() != KStruct {
 		return
 	}
 
@@ -692,7 +692,7 @@ func (c *refValue) refLen() int {
 	}
 	k := c.refKind()
 	switch k {
-	case tpSlice:
+	case KSlice:
 		// For slices, the length is stored in the slice header
 		return (*sliceHeader)(c.ptr).Len
 	default:
@@ -709,7 +709,7 @@ func (c *refValue) refIndex(i int) *refValue {
 	}
 	k := c.refKind()
 	switch k {
-	case tpSlice:
+	case KSlice:
 		s := (*sliceHeader)(c.ptr)
 		if i < 0 || i >= s.Len {
 			c.err = errorType("reflect: slice index out of range")
@@ -734,7 +734,7 @@ func (c *refValue) refIndex(i int) *refValue {
 
 		// If element is stored indirectly, set the flag
 		// Note: strings should never be indirect in slices
-		if elemType.Kind() != tpString && elemType.kind&kindDirectIface == 0 {
+		if elemType.Kind() != KString && elemType.kind&kindDirectIface == 0 {
 			result.flag |= flagIndir
 		}
 
@@ -747,7 +747,7 @@ func (c *refValue) refIndex(i int) *refValue {
 
 // refMakeSlice creates a new slice with the given type, length, and capacity
 func refMakeSlice(typ *refType, len, cap int) *refValue {
-	if typ.Kind() != tpSlice {
+	if typ.Kind() != KSlice {
 		panic("refMakeSlice called on non-slice type")
 	}
 

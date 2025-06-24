@@ -34,56 +34,56 @@ func TestReflectPointerFieldAccess(t *testing.T) {
 	rv := refValueOf(&container)
 	elem := rv.refElem() // Get the struct value from pointer
 
-	if elem.refKind() != tpStruct {
-		t.Errorf("Container elem kind: expected %v, got %v", tpStruct, elem.refKind())
+	if elem.refKind() != KStruct {
+		t.Errorf("Container elem kind: expected %v, got %v", KStruct, elem.refKind())
 	}
 
 	// Get fields
 	nameField := elem.refField(0)
 	coordsField := elem.refField(1)
 
-	if nameField.refKind() != tpString {
-		t.Errorf("Name field kind: expected %v, got %v", tpString, nameField.refKind())
+	if nameField.refKind() != KString {
+		t.Errorf("Name field kind: expected %v, got %v", KString, nameField.refKind())
 	}
 	if nameField.String() != "test" {
 		t.Errorf("Name field value: expected %q, got %q", "test", nameField.String())
 	}
 
-	if coordsField.refKind() != tpPointer {
-		t.Errorf("Coords field kind: expected %v, got %v", tpPointer, coordsField.refKind())
+	if coordsField.refKind() != KPointer {
+		t.Errorf("Coords field kind: expected %v, got %v", KPointer, coordsField.refKind())
 	}
 
-	if coordsField.refKind() == tpPointer {
+	if coordsField.refKind() == KPointer {
 		coordsElem := coordsField.refElem()
 		if !coordsElem.refIsValid() {
 			t.Fatal("Coords elem is not valid")
 		}
 
-		if coordsElem.refKind() != tpStruct {
-			t.Errorf("Coords elem kind: expected %v, got %v", tpStruct, coordsElem.refKind())
+		if coordsElem.refKind() != KStruct {
+			t.Errorf("Coords elem kind: expected %v, got %v", KStruct, coordsElem.refKind())
 		}
 
-		if coordsElem.refKind() == tpStruct {
+		if coordsElem.refKind() == KStruct {
 			latField := coordsElem.refField(0)
 			lngField := coordsElem.refField(1)
 			altField := coordsElem.refField(2)
 
-			if latField.refKind() != tpFloat64 {
-				t.Errorf("Lat field kind: expected %v, got %v", tpFloat64, latField.refKind())
+			if latField.refKind() != KFloat64 {
+				t.Errorf("Lat field kind: expected %v, got %v", KFloat64, latField.refKind())
 			}
 			if latField.refFloat() != 37.7749 {
 				t.Errorf("Lat field value: expected %f, got %f", 37.7749, latField.refFloat())
 			}
 
-			if lngField.refKind() != tpFloat64 {
-				t.Errorf("Lng field kind: expected %v, got %v", tpFloat64, lngField.refKind())
+			if lngField.refKind() != KFloat64 {
+				t.Errorf("Lng field kind: expected %v, got %v", KFloat64, lngField.refKind())
 			}
 			if lngField.refFloat() != -122.4194 {
 				t.Errorf("Lng field value: expected %f, got %f", -122.4194, lngField.refFloat())
 			}
 
-			if altField.refKind() != tpInt {
-				t.Errorf("Alt field kind: expected %v, got %v", tpInt, altField.refKind())
+			if altField.refKind() != KInt {
+				t.Errorf("Alt field kind: expected %v, got %v", KInt, altField.refKind())
 			}
 			if altField.refInt() != 100 {
 				t.Errorf("Alt field value: expected %d, got %d", 100, altField.refInt())
@@ -124,20 +124,20 @@ func TestReflectFieldSetterOperations(t *testing.T) {
 
 	// Get the coords field and verify we can access it
 	coordsField := newElem.refField(1)
-	if coordsField.refKind() != tpPointer {
-		t.Errorf("Coords field kind: expected %v, got %v", tpPointer, coordsField.refKind())
+	if coordsField.refKind() != KPointer {
+		t.Errorf("Coords field kind: expected %v, got %v", KPointer, coordsField.refKind())
 	}
 
 	// Dereference the pointer to get the struct
 	coordsElem := coordsField.refElem()
-	if coordsElem.refKind() != tpStruct {
-		t.Errorf("Coords elem kind: expected %v, got %v", tpStruct, coordsElem.refKind())
+	if coordsElem.refKind() != KStruct {
+		t.Errorf("Coords elem kind: expected %v, got %v", KStruct, coordsElem.refKind())
 	}
 
 	// Test accessing fields of the pointed-to struct
 	latField := coordsElem.refField(0)
-	if latField.refKind() != tpFloat64 {
-		t.Errorf("Lat field kind: expected %v, got %v", tpFloat64, latField.refKind())
+	if latField.refKind() != KFloat64 {
+		t.Errorf("Lat field kind: expected %v, got %v", KFloat64, latField.refKind())
 	}
 
 	// Test value retrieval
@@ -174,7 +174,7 @@ func TestReflectFieldCorruption(t *testing.T) {
 	}
 	// Test reflection on this structure
 	rv := refValueOf(phone)
-	if rv.refKind() != tpStruct {
+	if rv.refKind() != KStruct {
 		t.Fatalf("Expected struct, got %v", rv.refKind())
 	}
 
@@ -192,7 +192,7 @@ func TestReflectFieldCorruption(t *testing.T) {
 		// Get field value using reflection
 		fieldVal := rv.refField(i)
 
-		if fieldVal.refKind() == tpString {
+		if fieldVal.refKind() == KString {
 			strVal := fieldVal.String()
 
 			// Manual check - calculate field address manually
@@ -227,8 +227,8 @@ func TestDebugPointerType(t *testing.T) {
 	v := refValueOf(pi)
 
 	// Test basic pointer properties
-	if v.refKind() != tpPointer {
-		t.Errorf("Expected tpPointer, got %v", v.refKind())
+	if v.refKind() != KPointer {
+		t.Errorf("Expected KPointer, got %v", v.refKind())
 	}
 
 	if !v.refIsValid() {
@@ -240,7 +240,7 @@ func TestDebugPointerType(t *testing.T) {
 	}
 
 	// Test pointer type properties
-	if v.refKind() != tpPointer {
+	if v.refKind() != KPointer {
 		t.Errorf("Expected pointer type kind, got %v", v.refKind())
 	}
 
@@ -250,7 +250,7 @@ func TestDebugPointerType(t *testing.T) {
 		t.Fatal("Pointer type should have valid elem type")
 	}
 
-	if elemType.refKind() != tpInt {
+	if elemType.refKind() != KInt {
 		t.Errorf("Expected int elem type, got %v", elemType.refKind())
 	}
 
@@ -260,7 +260,7 @@ func TestDebugPointerType(t *testing.T) {
 		t.Fatal("refElem() should return valid value for non-nil pointer")
 	}
 
-	if elem.refKind() != tpInt {
+	if elem.refKind() != KInt {
 		t.Errorf("Expected int after refElem(), got %v", elem.refKind())
 	}
 
@@ -303,15 +303,15 @@ func TestDebugPointerChain(t *testing.T) {
 	// Step 1: Get outer pointer
 	v := refValueOf(outer)
 	t.Logf("Step 1 - refValueOf(outer): refKind=%v, ptr=%p", v.refKind(), v.ptr)
-	if v.refKind() != tpPointer {
-		t.Errorf("Step 1: Expected tpPointer, got %v", v.refKind())
+	if v.refKind() != KPointer {
+		t.Errorf("Step 1: Expected KPointer, got %v", v.refKind())
 	}
 
 	// Step 2: Dereference to get struct
 	structValue := v.refElem()
 	t.Logf("Step 2 - structValue: refKind=%v, ptr=%p", structValue.refKind(), structValue.ptr)
-	if structValue.refKind() != tpStruct {
-		t.Errorf("Step 2: Expected tpStruct, got %v", structValue.refKind())
+	if structValue.refKind() != KStruct {
+		t.Errorf("Step 2: Expected KStruct, got %v", structValue.refKind())
 	}
 	// Verify this points to the actual struct
 	if uintptr(structValue.ptr) != uintptr(unsafe.Pointer(outer)) {
@@ -321,8 +321,8 @@ func TestDebugPointerChain(t *testing.T) {
 	// Step 3: Get the InnerPtr field
 	field0 := structValue.refField(0)
 	t.Logf("Step 3 - field0: refKind=%v, ptr=%p, flags=%d", field0.refKind(), field0.ptr, field0.flag)
-	if field0.refKind() != tpPointer {
-		t.Errorf("Step 3: Expected tpPointer, got %v", field0.refKind())
+	if field0.refKind() != KPointer {
+		t.Errorf("Step 3: Expected KPointer, got %v", field0.refKind())
 	}
 
 	// Debug: Let's see what's actually stored at the field location
@@ -347,8 +347,8 @@ func TestDebugPointerChain(t *testing.T) {
 	if !innerStruct.refIsValid() {
 		t.Fatal("Step 4: Inner struct should be valid")
 	}
-	if innerStruct.refKind() != tpStruct {
-		t.Errorf("Step 4: Expected tpStruct, got %v", innerStruct.refKind())
+	if innerStruct.refKind() != KStruct {
+		t.Errorf("Step 4: Expected KStruct, got %v", innerStruct.refKind())
 	}
 	// This should point to the actual inner struct
 	if uintptr(innerStruct.ptr) != uintptr(unsafe.Pointer(inner)) {
@@ -358,12 +358,12 @@ func TestDebugPointerChain(t *testing.T) {
 	valueField := innerStruct.refField(0)
 	t.Logf("Step 5 - valueField: refKind=%v, ptr=%p, flags=%d", valueField.refKind(), valueField.ptr, valueField.flag)
 	t.Logf("Step 5a - valueField.flag&flagIndir = %d", valueField.flag&flagIndir)
-	if valueField.refKind() != tpInt {
-		t.Errorf("Step 5: Expected tpInt, got %v", valueField.refKind())
+	if valueField.refKind() != KInt {
+		t.Errorf("Step 5: Expected KInt, got %v", valueField.refKind())
 	}
 
 	// Debug: Let's see what's actually stored at this location
-	if valueField.refKind() == tpInt {
+	if valueField.refKind() == KInt {
 		// Calculate expected address
 		expectedAddr := unsafe.Pointer(uintptr(unsafe.Pointer(inner)) + unsafe.Offsetof(inner.Value))
 		if valueField.ptr != expectedAddr {

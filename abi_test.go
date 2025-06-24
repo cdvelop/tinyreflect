@@ -12,12 +12,12 @@ func TestBasicTypeReflection(t *testing.T) {
 		expectedKind  kind
 		expectedValid bool
 	}{
-		{"string", "hello world", tpString, true},
-		{"int", int(42), tpInt, true},
-		{"int64", int64(42), tpInt64, true},
-		{"float64", float64(3.14), tpFloat64, true},
-		{"bool", true, tpBool, true},
-		{"nil", nil, tpInvalid, false},
+		{"string", "hello world", KString, true},
+		{"int", int(42), KInt, true},
+		{"int64", int64(42), KInt64, true},
+		{"float64", float64(3.14), KFloat64, true},
+		{"bool", true, KBool, true},
+		{"nil", nil, KInvalid, false},
 	}
 
 	for _, test := range tests {
@@ -60,8 +60,8 @@ func TestStringValueRetrieval(t *testing.T) {
 		t.Fatal("refValue should be valid for string")
 	}
 
-	if v.refKind() != tpString {
-		t.Fatalf("refKind() = %v, want %v", v.refKind(), tpString)
+	if v.refKind() != KString {
+		t.Fatalf("refKind() = %v, want %v", v.refKind(), KString)
 	}
 
 	// Test String() method
@@ -80,8 +80,8 @@ func TestIntValueRetrieval(t *testing.T) {
 		t.Fatal("refValue should be valid for int64")
 	}
 
-	if v.refKind() != tpInt64 {
-		t.Fatalf("refKind() = %v, want %v", v.refKind(), tpInt64)
+	if v.refKind() != KInt64 {
+		t.Fatalf("refKind() = %v, want %v", v.refKind(), KInt64)
 	}
 
 	// Test refInt() method
@@ -145,11 +145,11 @@ func TestKindString(t *testing.T) {
 		kind     kind
 		expected string
 	}{
-		{tpInvalid, "invalid"},
-		{tpBool, "bool"},
-		{tpInt, "int"},
-		{tpString, "string"},
-		{tpFloat64, "float64"},
+		{KInvalid, "invalid"},
+		{KBool, "bool"},
+		{KInt, "int"},
+		{KString, "string"},
+		{KFloat64, "float64"},
 		{kind(100), "invalid"}, // Out of bounds test - covers line 58
 	}
 
@@ -223,18 +223,18 @@ func TestTypeConversions(t *testing.T) {
 		value    any
 		expected kind
 	}{
-		{"int8", int8(8), tpInt8},
-		{"int16", int16(16), tpInt16},
-		{"int32", int32(32), tpInt32},
-		{"uint", uint(100), tpUint},
-		{"uint8", uint8(8), tpUint8},
-		{"uint16", uint16(16), tpUint16},
-		{"uint32", uint32(32), tpUint32},
-		{"uint64", uint64(64), tpUint64},
-		{"uintptr", uintptr(0x123), tpUintptr},
-		{"float32", float32(3.14), tpFloat32},
-		{"complex64", complex64(1 + 2i), tpComplex64},
-		{"complex128", complex128(1 + 2i), tpComplex128},
+		{"int8", int8(8), KInt8},
+		{"int16", int16(16), KInt16},
+		{"int32", int32(32), KInt32},
+		{"uint", uint(100), KUint},
+		{"uint8", uint8(8), KUint8},
+		{"uint16", uint16(16), KUint16},
+		{"uint32", uint32(32), KUint32},
+		{"uint64", uint64(64), KUint64},
+		{"uintptr", uintptr(0x123), KUintptr},
+		{"float32", float32(3.14), KFloat32},
+		{"complex64", complex64(1 + 2i), KComplex64},
+		{"complex128", complex128(1 + 2i), KComplex128},
 	}
 
 	for _, test := range tests {
@@ -252,8 +252,8 @@ func TestInterfaceAndPointers(t *testing.T) {
 	// Test interface{} handling
 	var iface any = "test string"
 	v := refValueOf(iface)
-	if v.refKind() != tpString {
-		t.Errorf("Interface value kind = %v, want %v", v.refKind(), tpString)
+	if v.refKind() != KString {
+		t.Errorf("Interface value kind = %v, want %v", v.refKind(), KString)
 	}
 
 	// Test double pointer
@@ -262,20 +262,20 @@ func TestInterfaceAndPointers(t *testing.T) {
 	ptrptr := &ptr
 
 	v = refValueOf(ptrptr)
-	if v.refKind() != tpPointer {
-		t.Errorf("Double pointer kind = %v, want %v", v.refKind(), tpPointer)
+	if v.refKind() != KPointer {
+		t.Errorf("Double pointer kind = %v, want %v", v.refKind(), KPointer)
 	}
 
 	// Test refElem() on pointer
 	elem := v.refElem()
-	if elem.refKind() != tpPointer {
-		t.Errorf("First refElem() kind = %v, want %v", elem.refKind(), tpPointer)
+	if elem.refKind() != KPointer {
+		t.Errorf("First refElem() kind = %v, want %v", elem.refKind(), KPointer)
 	}
 
 	// Test refElem() on inner pointer
 	elem2 := elem.refElem()
-	if elem2.refKind() != tpString {
-		t.Errorf("Second refElem() kind = %v, want %v", elem2.refKind(), tpString)
+	if elem2.refKind() != KString {
+		t.Errorf("Second refElem() kind = %v, want %v", elem2.refKind(), KString)
 	}
 }
 
@@ -284,8 +284,8 @@ func TestSliceOperations(t *testing.T) {
 	slice := []string{"a", "b", "c"}
 	v := refValueOf(slice)
 
-	if v.refKind() != tpSlice {
-		t.Errorf("Slice kind = %v, want %v", v.refKind(), tpSlice)
+	if v.refKind() != KSlice {
+		t.Errorf("Slice kind = %v, want %v", v.refKind(), KSlice)
 	}
 
 	length := v.refLen()
@@ -310,7 +310,7 @@ func TestArrayOperations(t *testing.T) {
 	t.Logf("Array kind: %v, length: %d", v.refKind(), v.refLen())
 
 	// Test that we can at least detect it's some kind of aggregate type
-	if v.refKind() != tpArray && v.refKind() != tpSlice {
+	if v.refKind() != KArray && v.refKind() != KSlice {
 		t.Logf("Array reported as kind %v instead of array or slice", v.refKind())
 	}
 }
@@ -321,8 +321,8 @@ func TestChannelOperations(t *testing.T) {
 	ch <- 42
 
 	v := refValueOf(ch)
-	if v.refKind() != tpChan {
-		t.Errorf("Channel kind = %v, want %v", v.refKind(), tpChan)
+	if v.refKind() != KChan {
+		t.Errorf("Channel kind = %v, want %v", v.refKind(), KChan)
 	}
 }
 
@@ -331,8 +331,8 @@ func TestMapOperations(t *testing.T) {
 	m := map[string]int{"key": 42}
 	v := refValueOf(m)
 
-	if v.refKind() != tpMap {
-		t.Errorf("Map kind = %v, want %v", v.refKind(), tpMap)
+	if v.refKind() != KMap {
+		t.Errorf("Map kind = %v, want %v", v.refKind(), KMap)
 	}
 }
 
@@ -341,8 +341,8 @@ func TestFunctionOperations(t *testing.T) {
 	fn := func() string { return "test" }
 	v := refValueOf(fn)
 
-	if v.refKind() != tpFunc {
-		t.Errorf("Function kind = %v, want %v", v.refKind(), tpFunc)
+	if v.refKind() != KFunc {
+		t.Errorf("Function kind = %v, want %v", v.refKind(), KFunc)
 	}
 }
 
@@ -352,7 +352,7 @@ func TestUnsafePointerOperations(t *testing.T) {
 	v := refValueOf(&str)
 
 	// Test that we can access the value through pointer
-	if v.refKind() != tpPointer {
+	if v.refKind() != KPointer {
 		t.Errorf("Expected pointer kind, got %v", v.refKind())
 	}
 
@@ -391,12 +391,12 @@ func TestMethodOperations(t *testing.T) {
 	v := refValueOf(&str)
 
 	// Test basic pointer operations
-	if v.refKind() != tpPointer {
+	if v.refKind() != KPointer {
 		t.Errorf("Expected pointer kind, got %v", v.refKind())
 	}
 
 	elem := v.refElem()
-	if elem.refKind() != tpString {
+	if elem.refKind() != KString {
 		t.Errorf("Expected string kind, got %v", elem.refKind())
 	}
 }
@@ -407,20 +407,20 @@ func TestTypeElementOperations(t *testing.T) {
 	str := "test"
 	ptrVal := refValueOf(&str)
 
-	if ptrVal.refKind() != tpPointer {
+	if ptrVal.refKind() != KPointer {
 		t.Errorf("Expected pointer kind, got %v", ptrVal.refKind())
 	}
 
 	elemVal := ptrVal.refElem()
-	if elemVal.refKind() != tpString {
-		t.Errorf("Pointer element kind = %v, want %v", elemVal.refKind(), tpString)
+	if elemVal.refKind() != KString {
+		t.Errorf("Pointer element kind = %v, want %v", elemVal.refKind(), KString)
 	}
 
 	// Test slice element access safely
 	slice := []int{1, 2, 3}
 	sliceVal := refValueOf(slice)
 
-	if sliceVal.refKind() != tpSlice {
+	if sliceVal.refKind() != KSlice {
 		t.Errorf("Expected slice kind, got %v", sliceVal.refKind())
 	}
 
@@ -443,8 +443,8 @@ func TestTypeElementOperations(t *testing.T) {
 
 	// Test basic type operations that should work
 	intVal := refValueOf(42)
-	if intVal.refKind() != tpInt {
-		t.Errorf("Int kind = %v, want %v", intVal.refKind(), tpInt)
+	if intVal.refKind() != KInt {
+		t.Errorf("Int kind = %v, want %v", intVal.refKind(), KInt)
 	}
 
 	if intVal.refInt() != 42 {
@@ -567,7 +567,7 @@ func TestRefStructMetaNumFieldAndField(t *testing.T) {
 
 	// Get reflection value and struct metadata
 	rv := refValueOf(testStruct)
-	if rv.refKind() != tpStruct {
+	if rv.refKind() != KStruct {
 		t.Fatalf("Expected struct, got %v", rv.refKind())
 	}
 

@@ -6,42 +6,42 @@ import "unsafe"
 // This eliminates duplication with convert.go types and provides single source of truth
 
 // kind represents the specific kind of type that a Type represents (private)
-// Unified with convert.go vTpe, using tp prefix for TinyString naming convention
+// Unified with convert.go kind, using tp prefix for TinyString naming convention
 type kind uint8
 
 const (
-	tpInvalid kind = iota
-	tpBool
-	tpInt
-	tpInt8
-	tpInt16
-	tpInt32
-	tpInt64
-	tpUint
-	tpUint8
-	tpUint16
-	tpUint32
-	tpUint64
-	tpUintptr
-	tpFloat32
-	tpFloat64
-	tpComplex64
-	tpComplex128
-	tpArray
-	tpChan
-	tpFunc
-	tpInterface
-	tpMap
-	tpPointer
-	tpSlice
-	tpString
-	tpStruct
-	tpUnsafePointer
+	KInvalid kind = iota
+	KBool
+	KInt
+	KInt8
+	KInt16
+	KInt32
+	KInt64
+	KUint
+	KUint8
+	KUint16
+	KUint32
+	KUint64
+	KUintptr
+	KFloat32
+	KFloat64
+	KComplex64
+	KComplex128
+	KArray
+	KChan
+	KFunc
+	KInterface
+	KMap
+	KPointer
+	KSlice
+	KString
+	KStruct
+	KUnsafePtr
 
 	// TinyString specific types - separate values to avoid conflicts
-	tpStrSlice // String slice type (separate from tpSlice)
-	tpStrPtr   // String pointer type (separate from tpPointer)
-	tpErr      // Error type (separate from tpInvalid)
+	KSlice   // String slice type (separate from KSlice)
+	KPointer // String pointer type (separate from KPointer)
+	KErr     // Error type (separate from KInvalid)
 )
 
 const (
@@ -59,33 +59,33 @@ func (k kind) String() string {
 }
 
 var kindNames = []string{
-	tpInvalid:       "invalid",
-	tpBool:          "bool",
-	tpInt:           "int",
-	tpInt8:          "int8",
-	tpInt16:         "int16",
-	tpInt32:         "int32",
-	tpInt64:         "int64",
-	tpUint:          "uint",
-	tpUint8:         "uint8",
-	tpUint16:        "uint16",
-	tpUint32:        "uint32",
-	tpUint64:        "uint64",
-	tpUintptr:       "uintptr",
-	tpFloat32:       "float32",
-	tpFloat64:       "float64",
-	tpComplex64:     "complex64",
-	tpComplex128:    "complex128",
-	tpArray:         "array",
-	tpChan:          "chan",
-	tpFunc:          "func",
-	tpInterface:     "interface",
-	tpMap:           "map",
-	tpPointer:       "ptr",
-	tpSlice:         "slice",
-	tpString:        "string",
-	tpStruct:        "struct",
-	tpUnsafePointer: "unsafe.Pointer",
+	KInvalid:    "invalid",
+	KBool:       "bool",
+	KInt:        "int",
+	KInt8:       "int8",
+	KInt16:      "int16",
+	KInt32:      "int32",
+	KInt64:      "int64",
+	KUint:       "uint",
+	KUint8:      "uint8",
+	KUint16:     "uint16",
+	KUint32:     "uint32",
+	KUint64:     "uint64",
+	KUintptr:    "uintptr",
+	KFloat32:    "float32",
+	KFloat64:    "float64",
+	KComplex64:  "complex64",
+	KComplex128: "complex128",
+	KArray:      "array",
+	KChan:       "chan",
+	KFunc:       "func",
+	KInterface:  "interface",
+	KMap:        "map",
+	KPointer:    "ptr",
+	KSlice:      "slice",
+	KString:     "string",
+	KStruct:     "struct",
+	KUnsafePtr:  "unsafe.Pointer",
 }
 
 // tFlag is used by a Type to signal what extra type information is available
@@ -268,13 +268,13 @@ func (t *refType) Size() uintptr {
 // Elem returns the element type for pointer, array, channel, map, or slice types
 func (t *refType) Elem() *refType {
 	switch t.Kind() {
-	case tpPointer:
+	case KPointer:
 		pt := (*refPtrType)(unsafe.Pointer(t))
 		return pt.elem
-	case tpArray:
+	case KArray:
 		at := (*refArrayType)(unsafe.Pointer(t))
 		return at.elem
-	case tpSlice:
+	case KSlice:
 		st := (*refSliceType)(unsafe.Pointer(t))
 		return st.elem
 	// Add other cases as needed
