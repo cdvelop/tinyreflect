@@ -2,6 +2,8 @@ package tinyreflect
 
 import (
 	"testing"
+
+	. "github.com/cdvelop/tinystring"
 )
 
 // Test structures for reflection functionality
@@ -25,7 +27,7 @@ type NestedStruct struct {
 func TestRefValueOfBasicTypes(t *testing.T) {
 	tests := []struct {
 		value    any
-		expected kind
+		expected Kind
 		name     string
 	}{
 		{int(42), KInt, "int"},
@@ -49,7 +51,7 @@ func TestRefValueOfBasicTypes(t *testing.T) {
 	for _, test := range tests {
 		v := refValueOf(test.value)
 		if v.refKind() != test.expected {
-			t.Errorf("%s: got kind %v, want %v", test.name, v.refKind(), test.expected)
+			t.Errorf("%s: got Kind %v, want %v", test.name, v.refKind(), test.expected)
 		}
 		if !v.refIsValid() {
 			t.Errorf("%s: value should be valid", test.name)
@@ -62,7 +64,7 @@ func TestRefValuePointerElem(t *testing.T) {
 	// Test with different pointer types
 	tests := []struct {
 		value    any
-		expected kind
+		expected Kind
 		name     string
 	}{
 		{new(int), KInt, "*int"},
@@ -76,7 +78,7 @@ func TestRefValuePointerElem(t *testing.T) {
 
 		// Pointer should be detected
 		if v.refKind() != KPointer {
-			t.Errorf("%s: got kind %v, want %v (pointer)", test.name, v.refKind(), KPointer)
+			t.Errorf("%s: got Kind %v, want %v (pointer)", test.name, v.refKind(), KPointer)
 			continue
 		}
 
@@ -88,7 +90,7 @@ func TestRefValuePointerElem(t *testing.T) {
 		}
 
 		if elem.refKind() != test.expected {
-			t.Errorf("%s: refElem() got kind %v, want %v", test.name, elem.refKind(), test.expected)
+			t.Errorf("%s: refElem() got Kind %v, want %v", test.name, elem.refKind(), test.expected)
 		}
 	}
 }
@@ -100,7 +102,7 @@ func TestRefValueSetters(t *testing.T) {
 		var s string
 		v := refValueOf(&s).refElem()
 		if v.refKind() != KString {
-			t.Fatalf("Expected string kind, got %v", v.refKind())
+			t.Fatalf("Expected string Kind, got %v", v.refKind())
 		}
 
 		v.refSetString("hello world")
@@ -114,7 +116,7 @@ func TestRefValueSetters(t *testing.T) {
 		var i int64
 		v := refValueOf(&i).refElem()
 		if v.refKind() != KInt64 {
-			t.Fatalf("Expected int64 kind, got %v", v.refKind())
+			t.Fatalf("Expected int64 Kind, got %v", v.refKind())
 		}
 		v.refSetInt(42)
 		if i != 42 {
@@ -127,7 +129,7 @@ func TestRefValueSetters(t *testing.T) {
 		var b bool
 		v := refValueOf(&b).refElem()
 		if v.refKind() != KBool {
-			t.Fatalf("Expected bool kind, got %v", v.refKind())
+			t.Fatalf("Expected bool Kind, got %v", v.refKind())
 		}
 		v.refSetBool(true)
 		if !b {
@@ -140,7 +142,7 @@ func TestRefValueSetters(t *testing.T) {
 		var f float64
 		v := refValueOf(&f).refElem()
 		if v.refKind() != KFloat64 {
-			t.Fatalf("Expected float64 kind, got %v", v.refKind())
+			t.Fatalf("Expected float64 Kind, got %v", v.refKind())
 		}
 		v.refSetFloat(3.14)
 		if f != 3.14 {
@@ -199,7 +201,7 @@ func TestRefValueStructFields(t *testing.T) {
 
 	v := refValueOf(s)
 	if v.refKind() != KStruct {
-		t.Fatalf("Expected struct kind, got %v", v.refKind())
+		t.Fatalf("Expected struct Kind, got %v", v.refKind())
 	}
 
 	// Test refNumField
@@ -212,7 +214,7 @@ func TestRefValueStructFields(t *testing.T) {
 	t.Run("Field0_A", func(t *testing.T) {
 		field := v.refField(0)
 		if field.refKind() != KInt {
-			t.Errorf("refField(0) kind got %v, want %v", field.refKind(), KInt)
+			t.Errorf("refField(0) Kind got %v, want %v", field.refKind(), KInt)
 		}
 		if got := int(field.refInt()); got != s.A {
 			t.Errorf("refField(0) value got %d, want %d", got, s.A)
@@ -222,7 +224,7 @@ func TestRefValueStructFields(t *testing.T) {
 	t.Run("Field1_B", func(t *testing.T) {
 		field := v.refField(1)
 		if field.refKind() != KString {
-			t.Errorf("refField(1) kind got %v, want %v", field.refKind(), KString)
+			t.Errorf("refField(1) Kind got %v, want %v", field.refKind(), KString)
 		}
 		if got := field.String(); got != s.B {
 			t.Errorf("refField(1) value got %q, want %q", got, s.B)
@@ -236,13 +238,13 @@ func TestRefValueStructFieldSetting(t *testing.T) {
 	v := refValueOf(s).refElem()
 
 	if v.refKind() != KStruct {
-		t.Fatalf("Expected struct kind, got %v", v.refKind())
+		t.Fatalf("Expected struct Kind, got %v", v.refKind())
 	}
 
 	// Set field A (int)
 	fieldA := v.refField(0)
 	if fieldA.refKind() != KInt {
-		t.Fatalf("refField 0 expected int kind, got %v", fieldA.refKind())
+		t.Fatalf("refField 0 expected int Kind, got %v", fieldA.refKind())
 	}
 	fieldA.refSetInt(100)
 	if s.A != 100 {
@@ -252,7 +254,7 @@ func TestRefValueStructFieldSetting(t *testing.T) {
 	// Set field B (string)
 	fieldB := v.refField(1)
 	if fieldB.refKind() != KString {
-		t.Fatalf("refField 1 expected string kind, got %v", fieldB.refKind())
+		t.Fatalf("refField 1 expected string Kind, got %v", fieldB.refKind())
 	}
 	fieldB.refSetString("test")
 	if s.B != "test" {
@@ -266,7 +268,7 @@ func TestRefValueNilPointer(t *testing.T) {
 	v := refValueOf(p)
 
 	if v.refKind() != KPointer {
-		t.Fatalf("Expected pointer kind, got %v", v.refKind())
+		t.Fatalf("Expected pointer Kind, got %v", v.refKind())
 	}
 
 	elem := v.refElem()
@@ -324,7 +326,7 @@ func TestRefValueBigStruct(t *testing.T) {
 	v := refValueOf(s)
 
 	if v.refKind() != KStruct {
-		t.Fatalf("Expected struct kind, got %v", v.refKind())
+		t.Fatalf("Expected struct Kind, got %v", v.refKind())
 	}
 
 	if numFields := v.refNumField(); numFields != 5 {
@@ -335,7 +337,7 @@ func TestRefValueBigStruct(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		field := v.refField(i)
 		if field.refKind() != KInt64 {
-			t.Errorf("refField %d expected int64 kind, got %v", i, field.refKind())
+			t.Errorf("refField %d expected int64 Kind, got %v", i, field.refKind())
 		}
 		expectedValue := int64(i + 1)
 		if got := field.refInt(); got != expectedValue {
@@ -355,7 +357,7 @@ func TestRefValueDebugPointerChain(t *testing.T) {
 	t.Logf("Step 1 - refValueOf(&s): refKind=%v, refIsValid=%v", v1.refKind(), v1.refIsValid())
 
 	if v1.refKind() != KPointer {
-		t.Errorf("Expected pointer kind, got %v", v1.refKind())
+		t.Errorf("Expected pointer Kind, got %v", v1.refKind())
 		return
 	}
 
@@ -368,7 +370,7 @@ func TestRefValueDebugPointerChain(t *testing.T) {
 	}
 
 	if v2.refKind() != KString {
-		t.Errorf("refElem() expected string kind, got %v", v2.refKind())
+		t.Errorf("refElem() expected string Kind, got %v", v2.refKind())
 		return
 	}
 
@@ -593,7 +595,7 @@ func TestPointerTypeElemAccess(t *testing.T) {
 	tests := []struct {
 		name     string
 		ptr      any
-		elemKind kind
+		elemKind Kind
 	}{
 		{"*int", new(int), KInt},
 		{"*string", new(string), KString},
@@ -810,7 +812,7 @@ func TestRefSetUint(t *testing.T) {
 			elem.refSetUint(tt.setValue)
 
 			// Check if there was an error
-			if elem.err != errNone {
+			if elem.err != nil {
 				if !tt.expectError {
 					t.Errorf("Unexpected error for %s: %v", tt.name, elem.err)
 				}
@@ -842,7 +844,7 @@ func TestRefSetUintInvalidTypes(t *testing.T) {
 			elem := rv.refElem() // This should set an error
 			elem.refSetUint(42)
 
-			if elem.err == errNone {
+			if elem.err == nil {
 				t.Errorf("Expected error when setting uint on %s, but got none", tt.name)
 			}
 		})
@@ -872,7 +874,7 @@ func TestRefZeroComprehensive(t *testing.T) {
 			// Create zero value
 			zero := refZero(typ)
 
-			if zero.err != errNone {
+			if zero.err != nil {
 				t.Errorf("refZero() error: %v", zero.err)
 				return
 			}
@@ -884,11 +886,11 @@ func TestRefZeroComprehensive(t *testing.T) {
 
 			// The zero value should have the same type
 			if zero.refKind() != rv.refKind() {
-				t.Errorf("refZero() kind mismatch: expected %v, got %v",
+				t.Errorf("refZero() Kind mismatch: expected %v, got %v",
 					rv.refKind(), zero.refKind())
 			}
 
-			t.Logf("%s: kind=%v, valid=%v", tt.testDesc, zero.refKind(), zero.refIsValid())
+			t.Logf("%s: Kind=%v, valid=%v", tt.testDesc, zero.refKind(), zero.refIsValid())
 		})
 	}
 }
@@ -897,13 +899,13 @@ func TestRefZeroNilType(t *testing.T) {
 	// Test refZero with nil type (should return error)
 	zero := refZero(nil)
 
-	if zero.err == errNone {
+	if zero.err == nil {
 		t.Error("refZero(nil) should return an error")
 	}
 
-	expectedErr := "reflect: Zero(nil)"
-	if string(zero.err) != expectedErr {
-		t.Errorf("refZero(nil) error: expected %q, got %q", expectedErr, string(zero.err))
+	expectedErr := "invalid value"
+	if zero.err != nil && zero.err.Error() != expectedErr {
+		t.Errorf("refZero(nil) error: expected %q, got %q", expectedErr, zero.err.Error())
 	}
 }
 
@@ -919,7 +921,7 @@ func TestRefZeroLargeType(t *testing.T) {
 
 	zero := refZero(typ)
 
-	if zero.err != errNone {
+	if zero.err != nil {
 		t.Errorf("refZero() error with large struct: %v", zero.err)
 		return
 	}

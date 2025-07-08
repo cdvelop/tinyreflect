@@ -3,6 +3,8 @@ package tinyreflect
 import (
 	"testing"
 	"unsafe"
+
+	. "github.com/cdvelop/tinystring"
 )
 
 // TestReflectPointerFieldAccess tests reflection access to pointer-to-struct fields and setting values
@@ -35,7 +37,7 @@ func TestReflectPointerFieldAccess(t *testing.T) {
 	elem := rv.refElem() // Get the struct value from pointer
 
 	if elem.refKind() != KStruct {
-		t.Errorf("Container elem kind: expected %v, got %v", KStruct, elem.refKind())
+		t.Errorf("Container elem Kind: expected %v, got %v", KStruct, elem.refKind())
 	}
 
 	// Get fields
@@ -43,14 +45,14 @@ func TestReflectPointerFieldAccess(t *testing.T) {
 	coordsField := elem.refField(1)
 
 	if nameField.refKind() != KString {
-		t.Errorf("Name field kind: expected %v, got %v", KString, nameField.refKind())
+		t.Errorf("Name field Kind: expected %v, got %v", KString, nameField.refKind())
 	}
 	if nameField.String() != "test" {
 		t.Errorf("Name field value: expected %q, got %q", "test", nameField.String())
 	}
 
 	if coordsField.refKind() != KPointer {
-		t.Errorf("Coords field kind: expected %v, got %v", KPointer, coordsField.refKind())
+		t.Errorf("Coords field Kind: expected %v, got %v", KPointer, coordsField.refKind())
 	}
 
 	if coordsField.refKind() == KPointer {
@@ -60,7 +62,7 @@ func TestReflectPointerFieldAccess(t *testing.T) {
 		}
 
 		if coordsElem.refKind() != KStruct {
-			t.Errorf("Coords elem kind: expected %v, got %v", KStruct, coordsElem.refKind())
+			t.Errorf("Coords elem Kind: expected %v, got %v", KStruct, coordsElem.refKind())
 		}
 
 		if coordsElem.refKind() == KStruct {
@@ -69,21 +71,21 @@ func TestReflectPointerFieldAccess(t *testing.T) {
 			altField := coordsElem.refField(2)
 
 			if latField.refKind() != KFloat64 {
-				t.Errorf("Lat field kind: expected %v, got %v", KFloat64, latField.refKind())
+				t.Errorf("Lat field Kind: expected %v, got %v", KFloat64, latField.refKind())
 			}
 			if latField.refFloat() != 37.7749 {
 				t.Errorf("Lat field value: expected %f, got %f", 37.7749, latField.refFloat())
 			}
 
 			if lngField.refKind() != KFloat64 {
-				t.Errorf("Lng field kind: expected %v, got %v", KFloat64, lngField.refKind())
+				t.Errorf("Lng field Kind: expected %v, got %v", KFloat64, lngField.refKind())
 			}
 			if lngField.refFloat() != -122.4194 {
 				t.Errorf("Lng field value: expected %f, got %f", -122.4194, lngField.refFloat())
 			}
 
 			if altField.refKind() != KInt {
-				t.Errorf("Alt field kind: expected %v, got %v", KInt, altField.refKind())
+				t.Errorf("Alt field Kind: expected %v, got %v", KInt, altField.refKind())
 			}
 			if altField.refInt() != 100 {
 				t.Errorf("Alt field value: expected %d, got %d", 100, altField.refInt())
@@ -125,19 +127,19 @@ func TestReflectFieldSetterOperations(t *testing.T) {
 	// Get the coords field and verify we can access it
 	coordsField := newElem.refField(1)
 	if coordsField.refKind() != KPointer {
-		t.Errorf("Coords field kind: expected %v, got %v", KPointer, coordsField.refKind())
+		t.Errorf("Coords field Kind: expected %v, got %v", KPointer, coordsField.refKind())
 	}
 
 	// Dereference the pointer to get the struct
 	coordsElem := coordsField.refElem()
 	if coordsElem.refKind() != KStruct {
-		t.Errorf("Coords elem kind: expected %v, got %v", KStruct, coordsElem.refKind())
+		t.Errorf("Coords elem Kind: expected %v, got %v", KStruct, coordsElem.refKind())
 	}
 
 	// Test accessing fields of the pointed-to struct
 	latField := coordsElem.refField(0)
 	if latField.refKind() != KFloat64 {
-		t.Errorf("Lat field kind: expected %v, got %v", KFloat64, latField.refKind())
+		t.Errorf("Lat field Kind: expected %v, got %v", KFloat64, latField.refKind())
 	}
 
 	// Test value retrieval
@@ -241,7 +243,7 @@ func TestDebugPointerType(t *testing.T) {
 
 	// Test pointer type properties
 	if v.refKind() != KPointer {
-		t.Errorf("Expected pointer type kind, got %v", v.refKind())
+		t.Errorf("Expected pointer type Kind, got %v", v.refKind())
 	}
 
 	// Test elem type access

@@ -1,47 +1,9 @@
 package tinyreflect
 
-import "unsafe"
+import (
+	"unsafe"
 
-// ABI types consolidated from internal/abi for TinyString JSON functionality
-// This eliminates duplication with convert.go types and provides single source of truth
-
-// kind represents the specific kind of type that a Type represents (private)
-// Unified with convert.go kind, using tp prefix for TinyString naming convention
-type kind uint8
-
-const (
-	KInvalid kind = iota
-	KBool
-	KInt
-	KInt8
-	KInt16
-	KInt32
-	KInt64
-	KUint
-	KUint8
-	KUint16
-	KUint32
-	KUint64
-	KUintptr
-	KFloat32
-	KFloat64
-	KComplex64
-	KComplex128
-	KArray
-	KChan
-	KFunc
-	KInterface
-	KMap
-	KPointer
-	KSlice
-	KString
-	KStruct
-	KUnsafePtr
-
-	// TinyString specific types - separate values to avoid conflicts
-	KSlice   // String slice type (separate from KSlice)
-	KPointer // String pointer type (separate from KPointer)
-	KErr     // Error type (separate from KInvalid)
+	. "github.com/cdvelop/tinystring"
 )
 
 const (
@@ -49,44 +11,6 @@ const (
 	kindGCProg      = 1 << 6 // Type.gc points to GC program
 	kindMask        = (1 << 5) - 1
 )
-
-// String returns the name of k
-func (k kind) String() string {
-	if int(k) < len(kindNames) {
-		return kindNames[k]
-	}
-	return kindNames[0]
-}
-
-var kindNames = []string{
-	KInvalid:    "invalid",
-	KBool:       "bool",
-	KInt:        "int",
-	KInt8:       "int8",
-	KInt16:      "int16",
-	KInt32:      "int32",
-	KInt64:      "int64",
-	KUint:       "uint",
-	KUint8:      "uint8",
-	KUint16:     "uint16",
-	KUint32:     "uint32",
-	KUint64:     "uint64",
-	KUintptr:    "uintptr",
-	KFloat32:    "float32",
-	KFloat64:    "float64",
-	KComplex64:  "complex64",
-	KComplex128: "complex128",
-	KArray:      "array",
-	KChan:       "chan",
-	KFunc:       "func",
-	KInterface:  "interface",
-	KMap:        "map",
-	KPointer:    "ptr",
-	KSlice:      "slice",
-	KString:     "string",
-	KStruct:     "struct",
-	KUnsafePtr:  "unsafe.Pointer",
-}
 
 // tFlag is used by a Type to signal what extra type information is available
 type tFlag uint8
@@ -115,7 +39,7 @@ type refType struct {
 }
 
 // refKind returns the Kind for this type (private version)
-func (t *refType) refKind() kind {
+func (t *refType) refKind() Kind {
 	return t.Kind() // Delegate to the existing Kind() method
 }
 
@@ -255,9 +179,9 @@ type refName struct {
 	bytes *byte
 }
 
-// Kind returns the kind of type
-func (t *refType) Kind() kind {
-	return kind(t.kind & kindMask)
+// Kind returns the Kind of type
+func (t *refType) Kind() Kind {
+	return Kind(t.kind & kindMask)
 }
 
 // Size returns the size of data with type t
