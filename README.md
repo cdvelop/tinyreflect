@@ -17,10 +17,74 @@ Every Go project needs reflection capabilities for JSON operations, struct field
 - 🚀 **Distribution efficiency** - Large binaries for simple operations
 
 ### The Solution
-TinyReflect replaces the standard library reflect package with **lightweight, manual implementations** that deliver:
+TinyReflect replaces the standard library reflect package with **ultra-minimal, focused implementations** that deliver:
 
-- 🏆 **Dramatically smaller binaries** - Significant size reduction for WebAssembly
+- 🏆 **Dramatically smaller binaries** - Significant size reduction for WebAssembly through maximum code reuse
 - ✅ **Full TinyGo compatibility** - No compilation issues or warnings
 - 🎯 **Predictable performance** - No hidden allocations or overhead
-- 🔧 **Familiar API** - Essential reflection operations with minimal footprint
+- 🔧 **Minimal API** - Only essential operations for basic JSON-like data handling
 - 🌍 **Multilingual error handling** - Integrated with tinystring's error system
+- ♻️ **Maximum code reuse** - Leverages tinystring's type detection to minimize duplication
+
+### Supported Types (Minimalist Approach)
+TinyReflect **intentionally** supports only a minimal set of types to keep binary size small:
+
+**✅ Supported Types:**
+- **Basic types**: `string`, `bool`
+- **All numeric types**: `int`, `int8`, `int16`, `int32`, `int64`, `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`
+- **All basic slices**: `[]string`, `[]bool`, `[]byte`, `[]int`, `[]int8`, `[]int16`, `[]int32`, `[]int64`, `[]uint`, `[]uint8`, `[]uint16`, `[]uint32`, `[]uint64`, `[]float32`, `[]float64`
+- **Structs**: Only with supported field types
+- **Struct slices**: `[]struct{...}` where all fields are supported types
+- **Maps**: `map[K]V` where K and V are supported types only
+- **Map slices**: `[]map[K]V` where K and V are supported types only
+- **Pointers**: Only to supported types above
+
+**❌ Unsupported Types:**
+- `interface{}`, `chan`, `func`
+- `complex64`, `complex128`
+- `uintptr`, `unsafe.Pointer` (used internally only)
+- Arrays (different from slices)
+- Nested complex types beyond supported scope
+
+This focused approach ensures minimal code size while covering the most common JSON-like data operations including simple structs.
+
+## Usage Examples
+
+```go
+// Supported struct with simple fields
+type User struct {
+    Name  string
+    Age   int
+    Email string
+    Active bool
+}
+
+// Supported slice of structs
+users := []User{
+    {Name: "John", Age: 30, Email: "john@example.com", Active: true},
+    {Name: "Jane", Age: 25, Email: "jane@example.com", Active: false},
+}
+
+// Supported basic slices
+numbers := []int{1, 2, 3, 4, 5}
+names := []string{"Alice", "Bob", "Charlie"}
+flags := []bool{true, false, true}
+
+// Basic reflection operations
+v := refValueOf(users)
+if v.refKind() == KSlice {
+    length := v.refLen()
+    firstUser := v.refIndex(0)
+    if firstUser.refKind() == KStruct {
+        nameField := firstUser.refField(0)
+        name := nameField.refString() // "John"
+    }
+}
+
+// Working with basic slices
+numSlice := refValueOf(numbers)
+if numSlice.refKind() == KSlice {
+    firstNum := numSlice.refIndex(0)
+    value := firstNum.refInt() // 1
+}
+```

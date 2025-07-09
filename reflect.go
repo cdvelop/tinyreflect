@@ -1,12 +1,15 @@
 package tinyreflect
 
 import (
-	"fmt"
 	"sync"
 	"unsafe"
 
 	. "github.com/cdvelop/tinystring"
 )
+
+// TinyReflect - Minimal reflection library optimized for TinyGo/WebAssembly
+// This package provides a thin API layer over tinystring's core reflection functionality
+// ALL TYPE DETECTION AND CORE LOGIC IS DELEGATED TO TINYSTRING FOR MAXIMUM CODE REUSE
 
 // Minimal reflectlite integration for TinyString JSON functionality
 // This file contains essential reflection capabilities adapted from internal/reflectlite
@@ -32,6 +35,9 @@ type refValue struct {
 	// SPECIAL CASES: Complex types that need direct storage
 	stringSliceVal []string // Slice operations
 	stringPtrVal   *string  // Pointer operations
+
+	// FALLBACK: Original value for type inference when runtime metadata is incomplete
+	originalValue interface{} // Used for slice element type inference in TinyGo/WebAssembly
 }
 
 // refEface is the header for an interface{} value
@@ -57,13 +63,51 @@ const (
 )
 
 // refValueOf returns a new refValue initialized to the concrete value stored in i
-// This replaces the old refValue-based function
+// Only supports minimal types for WebAssembly/TinyGo compatibility
 func refValueOf(i any) *refValue {
 	c := &refValue{separator: "_"}
 	if i == nil {
 		return c
 	}
+
+	// Check if type is supported using tinystring's Convert for maximum code reuse
+	kind := Convert(i).GetKind()
+
+	// Validate supported types only
+	switch kind {
+	case KString, KBool:
+		// Basic types always supported
+	case KInt, KInt8, KInt16, KInt32, KInt64:
+		// All int variants supported
+	case KUint, KUint8, KUint16, KUint32, KUint64:
+		// All uint variants supported (excluding uintptr - internal use only)
+	case KFloat32, KFloat64:
+		// Float types supported
+	case KSliceStr:
+		// []string supported
+	case KByte:
+		// []byte supported (common case)
+	case KSlice:
+		// All other basic slices supported: []int, []bool, []float64, etc.
+	case KMap:
+		// Maps with supported key/value types
+	case KPointer:
+		// Pointers to supported types
+	case KStruct:
+		// Structs with supported field types
+	default:
+		// Reject unsupported types immediately
+		return &refValue{err: Err(D.Type, D.Not, D.Supported)}
+	}
+
 	c.initFromValue(i)
+
+	// Override the Kind with Convert's detection for consistency
+	c.flag = (c.flag &^ flagKindMask) | refFlag(kind)
+
+	// Store original value for slice element type inference
+	c.originalValue = i
+
 	return c
 }
 
@@ -180,7 +224,7 @@ func (c *refValue) refElem() *refValue {
 		result.flag = fl
 		return result
 	default:
-		panic("reflect: call of reflect.Value.Elem on " + c.Type().Kind().String() + " value")
+		return &refValue{err: Err(D.Type, D.Not, D.Supported)}
 	}
 }
 
@@ -194,11 +238,11 @@ func (c *refValue) refNumField() int {
 // refField returns the i'th field of the struct c
 func (c *refValue) refField(i int) *refValue {
 	if c.refKind() != KStruct {
-		panic("reflect: call of reflect.Value.Field on " + c.refKind().String() + " value")
+		return &refValue{err: Err(D.Type, D.Not, D.Supported)}
 	}
 	tt := (*refStructMeta)(unsafe.Pointer(c.typ))
 	if uint(i) >= uint(len(tt.fields)) {
-		panic("reflect: Field index out of range")
+		return &refValue{err: Err(D.Out, D.Of, D.Range)}
 	}
 	field := &tt.fields[i]
 	ptr := add(c.ptr, field.offset, "same as non-reflect &v.field")
@@ -248,7 +292,7 @@ func (c *refValue) refSetInt(x int64) {
 	case KInt64:
 		*(*int64)(ptr) = x
 	default:
-		panic("reflect: call of reflect.Value.SetInt on " + c.refKind().String() + " value")
+		c.err = Err(D.Type, D.Not, D.Supported)
 	}
 }
 
@@ -717,8 +761,8 @@ func (c *refValue) refLen() int {
 	}
 	k := c.refKind()
 	switch k {
-	case KSlice:
-		// For slices, the length is stored in the slice header
+	case KSlice, KByte, KSliceStr:
+		// For slices (including []byte and []string), the length is stored in the slice header
 		return (*sliceHeader)(c.ptr).Len
 	default:
 		c.err = errorType(D.Invalid, D.Type)
@@ -734,7 +778,7 @@ func (c *refValue) refIndex(i int) *refValue {
 	}
 	k := c.refKind()
 	switch k {
-	case KSlice:
+	case KSlice, KByte, KSliceStr:
 		s := (*sliceHeader)(c.ptr)
 		if i < 0 || i >= s.Len {
 			c.err = errorType(D.Out, D.Of, D.Range)
@@ -744,7 +788,12 @@ func (c *refValue) refIndex(i int) *refValue {
 		// Get element type
 		elemType := c.typ.Elem()
 		if elemType == nil {
-			return &refValue{err: errorType(D.Invalid, D.Type)}
+			// Fallback: Try to determine element type from the slice data
+			// This is needed for TinyGo/WebAssembly where runtime metadata might be incomplete
+			elemType = c.inferSliceElementType(k)
+			if elemType == nil {
+				return &refValue{err: errorType(D.Invalid, D.Type)}
+			}
 		}
 
 		elemSize := elemType.Size()
@@ -770,10 +819,75 @@ func (c *refValue) refIndex(i int) *refValue {
 	}
 }
 
+// inferSliceElementType tries to infer the element type of a slice when runtime metadata is incomplete
+// This is a workaround for TinyGo/WebAssembly limitations
+func (c *refValue) inferSliceElementType(sliceKind Kind) *refType {
+	// For KByte ([]byte), we know the element type is uint8
+	if sliceKind == KByte {
+		// Create a synthetic uint8 type
+		return createBasicType(KUint8, 1) // uint8 is 1 byte
+	}
+
+	// For KSliceStr ([]string), we know the element type is string
+	if sliceKind == KSliceStr {
+		// Create a synthetic string type
+		return createBasicType(KString, 16) // string is 16 bytes (pointer + length)
+	}
+
+	// For other slices, use the original value to determine element type
+	if c.originalValue != nil {
+		switch c.originalValue.(type) {
+		case []int:
+			return createBasicType(KInt, 8) // int is 8 bytes on 64-bit systems
+		case []int8:
+			return createBasicType(KInt8, 1)
+		case []int16:
+			return createBasicType(KInt16, 2)
+		case []int32:
+			return createBasicType(KInt32, 4)
+		case []int64:
+			return createBasicType(KInt64, 8)
+		case []uint:
+			return createBasicType(KUint, 8) // uint is 8 bytes on 64-bit systems
+		case []uint8:
+			return createBasicType(KUint8, 1)
+		case []uint16:
+			return createBasicType(KUint16, 2)
+		case []uint32:
+			return createBasicType(KUint32, 4)
+		case []uint64:
+			return createBasicType(KUint64, 8)
+		case []float32:
+			return createBasicType(KFloat32, 4)
+		case []float64:
+			return createBasicType(KFloat64, 8)
+		case []bool:
+			return createBasicType(KBool, 1)
+		case []string:
+			return createBasicType(KString, 16) // string is 16 bytes (pointer + length)
+		}
+	}
+
+	// If we can't determine the type, return nil
+	return nil
+}
+
+// createBasicType creates a synthetic refType for basic types
+// This is used when runtime type metadata is incomplete
+func createBasicType(kind Kind, size uintptr) *refType {
+	// Create a minimal refType structure for the given kind and size
+	// This is a simplified approach for TinyGo/WebAssembly compatibility
+	typ := &refType{
+		size: size,
+		kind: uint8(kind),
+	}
+	return typ
+}
+
 // refMakeSlice creates a new slice with the given type, length, and capacity
 func refMakeSlice(typ *refType, len, cap int) *refValue {
 	if typ.Kind() != KSlice {
-		panic("refMakeSlice called on non-slice type")
+		return &refValue{err: Err(D.Type, D.Not, D.Supported)}
 	}
 
 	elemType := typ.Elem()
@@ -859,99 +973,8 @@ func (c *refValue) initFromValue(i any) {
 
 // mapRuntimeTypeToKind maps Go runtime types to tinystring Kind values
 func mapRuntimeTypeToKind(i any) Kind {
-	switch i.(type) {
-	case string:
-		return KString
-	case int:
-		return KInt
-	case int8:
-		return KInt8
-	case int16:
-		return KInt16
-	case int32:
-		return KInt32
-	case int64:
-		return KInt64
-	case uint:
-		return KUint
-	case uint8:
-		return KUint8
-	case uint16:
-		return KUint16
-	case uint32:
-		return KUint32
-	case uint64:
-		return KUint64
-	case uintptr:
-		return KUintptr
-	case float32:
-		return KFloat32
-	case float64:
-		return KFloat64
-	case bool:
-		return KBool
-	case complex64:
-		return KComplex64
-	case complex128:
-		return KComplex128
-	default:
-		// For complex types, we need to use reflection
-		return mapComplexTypeToKind(i)
-	}
-}
-
-// mapComplexTypeToKind handles complex types like slices, structs, pointers, etc.
-func mapComplexTypeToKind(i any) Kind {
-	eface := (*refEface)(unsafe.Pointer(&i))
-	if eface.typ == nil {
-		return KInvalid
-	}
-
-	// Use the Go runtime's kind field but map it to our Kind system
-	// Go's internal kind values don't match our Kind constants exactly
-	runtimeKind := eface.typ.kind & kindMask
-
-	// Debug: print runtime kind for troubleshooting
-	// TODO: Remove this debug output
-	if false { // Disable for production
-		fmt.Printf("DEBUG: runtime kind = %d for type %T\n", runtimeKind, i)
-	}
-
-	// Map Go runtime kind values to tinystring Kind values
-	switch runtimeKind {
-	case 1: // Bool
-		return KBool
-	case 2, 3, 4, 5, 6: // Int, Int8, Int16, Int32, Int64
-		return KInt // Simplified - could be more specific
-	case 7, 8, 9, 10, 11, 12: // Uint, Uint8, Uint16, Uint32, Uint64, Uintptr
-		return KUint // Simplified - could be more specific
-	case 13, 14: // Float32, Float64
-		return KFloat64 // Simplified
-	case 15, 16: // Complex64, Complex128
-		return KComplex128 // Simplified
-	case 17: // Array
-		return KArray
-	case 18: // Chan
-		return KChan
-	case 19: // Func
-		return KFunc
-	case 20: // Interface
-		return KInterface
-	case 21: // Map
-		return KMap
-	case 22: // Ptr
-		return KPointer // KPointer = 17 in tinystring
-	case 23: // Slice
-		return KSlice
-	case 24: // String
-		return KString
-	case 25: // Struct
-		return KStruct
-	case 26: // UnsafePointer
-		return KUnsafePtr
-	default:
-		return KInvalid
-	}
+	// Use Convert() for consistent type detection across the system
+	return Convert(i).GetKind()
 }
 
 // String returns the string representation of the value
