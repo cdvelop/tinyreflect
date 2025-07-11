@@ -51,40 +51,5 @@ This focused approach ensures minimal code size while covering the most common J
 ## Usage Examples
 
 ```go
-// Supported struct with simple fields
-type User struct {
-    Name  string
-    Age   int
-    Email string
-    Active bool
-}
 
-// Supported slice of structs
-users := []User{
-    {Name: "John", Age: 30, Email: "john@example.com", Active: true},
-    {Name: "Jane", Age: 25, Email: "jane@example.com", Active: false},
-}
-
-// Supported basic slices
-numbers := []int{1, 2, 3, 4, 5}
-names := []string{"Alice", "Bob", "Charlie"}
-flags := []bool{true, false, true}
-
-// Basic reflection operations
-v := refValueOf(users)
-if v.refKind() == KSlice {
-    length := v.refLen()
-    firstUser := v.refIndex(0)
-    if firstUser.refKind() == KStruct {
-        nameField := firstUser.refField(0)
-        name := nameField.refString() // "John"
-    }
-}
-
-// Working with basic slices
-numSlice := refValueOf(numbers)
-if numSlice.refKind() == KSlice {
-    firstNum := numSlice.refIndex(0)
-    value := firstNum.refInt() // 1
-}
 ```

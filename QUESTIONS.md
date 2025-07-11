@@ -8,7 +8,7 @@ Revisando el código actual, veo que:
 2. **tinyreflect** principalmente añade:
    - Acceso a campos de struct (`refField`)
    - Acceso a elementos de slice (`refIndex`) 
-   - Parsing de tags de struct (`refStructTag`)
+   - Parsing de tags de struct (`StructTag`)
    - Metadata de tipos (`refType`, `refValue`)
 
 ### 🤔 PREGUNTAS CRÍTICAS ANTES DE DECIDIR:
@@ -23,7 +23,7 @@ ambos paquetes siempre iran juntos por que es destino final es webassembly en en
 
 #### 2. **Arquitectura de Software**
 - ¿Prefieres un paquete monolítico (todo en tinystring) o separación de responsabilidades?
-- ¿La API pública cambiaría? ¿`tinystring.RefValueOf()` vs `tinyreflect.refValueOf()`?
+- ¿La API pública cambiaría? ¿`tinystring.RefValueOf()` vs `tinyreflect.ValueOf()`?
 - ¿Cómo afectaría esto a la compatibilidad hacia atrás?
 no importa la retrocompativilidad si integrar tinyreflect es necesario solo sera para uso interno con una api minimalista
 
