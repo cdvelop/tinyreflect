@@ -25,6 +25,22 @@ type TypeOff int32
 // or the functions in compiletype.go to access this type instead.
 // (TODO: this admonition applies to every type in this package.
 // Put it in some shared location?)
+
+const (
+	// Kind constants used for type operations
+	KindDirectIface Kind = 1 << 5
+	KindMask        Kind = (1 << 5) - 1
+)
+
+// Dictionary reference for reflection errors - "reflect" cannot be translated
+const ref = "reflect"
+
+// EmptyInterface describes the layout of a "interface{}" or a "any."
+type EmptyInterface struct {
+	Type *Type
+	Data unsafe.Pointer
+}
+
 type Type struct {
 	Size        uintptr
 	PtrBytes    uintptr // number of (prefix) bytes in the type that can contain pointers
@@ -88,7 +104,7 @@ func (t *Type) Field(i int) (StructField, error) {
 	}
 	st := (*StructType)(unsafe.Pointer(t))
 	if i < 0 || i >= len(st.Fields) {
-		return StructField{}, Err(ref, D.Field, D.Index, D.Out, D.Of, D.Range)
+		return StructField{}, Err(ref, D.Field, D.Out, D.Of, D.Range)
 	}
 	return st.Fields[i], nil
 }
@@ -97,7 +113,7 @@ func (t *Type) Field(i int) (StructField, error) {
 // It returns an error if the type is not a struct.
 func (t *Type) NumField() (int, error) {
 	if t.Kind() != K.Struct {
-		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, D.Struct)
+		return 0, Err(ref, D.Numbers, D.Fields, D.Type, D.Struct)
 	}
 	st := (*StructType)(unsafe.Pointer(t))
 	return len(st.Fields), nil

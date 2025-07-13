@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../tinystring"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../../../../usr/local/go/src/reflect"
+		},
+		{
+			"path": "../../../../../../usr/local/go/src/internal/abi"
+		},
+		{
+			"path": "../../../../../../usr/local/go/src/internal/reflectlite"
+		}
+	],
+	"settings": {}
+}

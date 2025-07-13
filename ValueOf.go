@@ -6,13 +6,6 @@ import (
 	. "github.com/cdvelop/tinystring"
 )
 
-const (
-	ref = "reflect:"
-	// TODO (khr, drchase) why aren't these in TFlag?  Investigate, fix if possible.
-	KindDirectIface Kind = 1 << 5
-	KindMask        Kind = (1 << 5) - 1
-)
-
 type flag uintptr
 
 const (
@@ -23,14 +16,6 @@ const (
 	flagEmbedRO   flag = 1 << 6
 	flagAddr      flag = 1 << 8
 )
-
-// EmptyInterface describes the layout of a "interface{}" or a "any."
-// These are represented differently than non-empty interface, as the first
-// word always points to an abi.Type.
-type EmptyInterface struct {
-	Type *Type
-	Data unsafe.Pointer
-}
 
 // TinyReflect - Minimal reflection library optimized for TinyGo/WebAssembly
 // This package provides a thin API layer over tinystring's core reflection functionality

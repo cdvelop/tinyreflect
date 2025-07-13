@@ -8,8 +8,8 @@ import (
 )
 
 type Person struct {
-	Name string `json:"name"`
-	Age  int    `json:"age"`
+	Name string `json:"name" Label:"Nombre"`
+	Age  int    `json:"age" Label:"edad"`
 }
 
 func TestGetFieldName(t *testing.T) {
@@ -26,12 +26,13 @@ func TestGetFieldName(t *testing.T) {
 	}
 
 	expectedFields := []struct {
-		Name string
-		Type string
-		Tag  string
+		Name  string
+		Type  string
+		Tag   string
+		Label string
 	}{
-		{Name: "Name", Type: "string", Tag: `json:"name"`},
-		{Name: "Age", Type: "int", Tag: `json:"age"`},
+		{Name: "Name", Type: "string", Tag: `json:"name" Label:"Nombre"`, Label: "Nombre"},
+		{Name: "Age", Type: "int", Tag: `json:"age" Label:"edad"`, Label: "edad"},
 	}
 
 	// Iterate over the struct fields
@@ -51,11 +52,17 @@ func TestGetFieldName(t *testing.T) {
 			t.Errorf("Field %d: expected type %s, got %s", i, expectedFields[i].Type, field.Typ.String())
 		}
 
-		// Test field tag
+		// Test field tag (full tag string)
 		if string(field.Tag()) != expectedFields[i].Tag {
 			t.Errorf("Field %d: expected tag %s, got %s", i, expectedFields[i].Tag, string(field.Tag()))
 		}
 
-		fmt.Printf("Field %d: %s (Type: %s, Tag: '%s')\n", i, field.Name.String(), field.Typ.String(), string(field.Tag()))
+		// Test Label tag using StructTag.Get (reflect style)
+		label := field.Tag().Get("Label")
+		if label != expectedFields[i].Label {
+			t.Errorf("Field %d: expected Label %s, got %s", i, expectedFields[i].Label, label)
+		}
+
+		fmt.Printf("Field %d: %s (Type: %s, Tag: '%s', Label: '%s')\n", i, field.Name.String(), field.Typ.String(), string(field.Tag()), label)
 	}
 }
