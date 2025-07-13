@@ -14,6 +14,9 @@
 		},
 		{
 			"path": "../../../../../../usr/local/go/src/internal/reflectlite"
+		},
+		{
+			"path": "../../Archive/mono"
 		}
 	],
 	"settings": {}

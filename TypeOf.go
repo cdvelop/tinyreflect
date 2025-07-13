@@ -78,7 +78,23 @@ func TypeOf(i any) *Type {
 }
 
 func (t *Type) String() string {
+	// For now, return kind string. Later can be enhanced to return actual type name
 	return t.Kind_.String()
+}
+
+// Name returns the type's name within its package for a defined type.
+// For struct types, returns the kind name
+func (t *Type) Name() string {
+	return t.Kind().String()
+}
+
+// StructID returns a unique identifier for struct types based on runtime hash
+// Returns empty string for non-struct types
+func (t *Type) StructID() string {
+	if t.Kind() == K.Struct {
+		return Convert(t.Hash).String()
+	}
+	return ""
 }
 
 // StructType returns t cast to a *StructType, or nil if its tag does not match.
