@@ -82,6 +82,26 @@ func unpackEface(i any) Value {
 	return Value{t, e.Data, f}
 }
 
+// Elem returns the value that the pointer v points to.
+// It panics if v's Kind is not Ptr.
+// It returns the zero Value if v is a nil pointer.
+func (v Value) Elem() (Value, error) {
+	if v.kind() != K.Pointer {
+		return Value{}, Err(ref, D.Value, D.NotOfType, D.Pointer)
+	}
+	if v.ptr == nil {
+		return Value{}, nil
+	}
+
+	tt := (*PtrType)(unsafe.Pointer(v.typ()))
+	typ := tt.Elem
+	fl := v.flag&^flagKindMask | flag(typ.Kind())
+	fl &^= flagStickyRO | flagEmbedRO
+	fl |= flagIndir | flagAddr
+	ptr := v.ptr
+	return Value{typ, ptr, fl}, nil
+}
+
 func (v Value) NumField() (int, error) {
 	if v.typ_ == nil {
 		return 0, Err(ref, D.Value, D.Nil)

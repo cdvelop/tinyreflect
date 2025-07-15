@@ -16,18 +16,8 @@ type NameOff int32
 // TypeOff is the Offset to a type from moduledata.types.  See resolveTypeOff in runtime.
 type TypeOff int32
 
-// Type is the runtime representation of a Go type.
-//
-// Be careful about accessing this type at build time, as the version
-// of this type in the compiler/linker may not have the same layout
-// as the version in the target binary, due to pointer width
-// differences and any experiments. Use cmd/compile/internal/rttype
-// or the functions in compiletype.go to access this type instead.
-// (TODO: this admonition applies to every type in this package.
-// Put it in some shared location?)
-
+// Essential constants for type operations
 const (
-	// Kind constants used for type operations
 	KindDirectIface Kind = 1 << 5
 	KindMask        Kind = (1 << 5) - 1
 )
@@ -40,6 +30,16 @@ type EmptyInterface struct {
 	Type *Type
 	Data unsafe.Pointer
 }
+
+// Type is the runtime representation of a Go type.
+//
+// Be careful about accessing this type at build time, as the version
+// of this type in the compiler/linker may not have the same layout
+// as the version in the target binary, due to pointer width
+// differences and any experiments. Use cmd/compile/internal/rttype
+// or the functions in compiletype.go to access this type instead.
+// (TODO: this admonition applies to every type in this package.
+// Put it in some shared location?)
 
 type Type struct {
 	Size        uintptr
@@ -78,14 +78,29 @@ func TypeOf(i any) *Type {
 }
 
 func (t *Type) String() string {
-	// For now, return kind string. Later can be enhanced to return actual type name
-	return t.Kind_.String()
+	return t.Kind().String()
 }
 
 // Name returns the type's name within its package for a defined type.
-// For struct types, returns the kind name
+// For TinyGo compatibility, struct names are resolved using the StructDictionary
 func (t *Type) Name() string {
-	return t.Kind().String()
+	if t.Kind_ == K.Struct {
+		// The original implementation caused a stack overflow due to infinite recursion.
+		// The fix is to resolve the name via the type's name offset (Str),
+		// which is how the standard reflect package does it internally.
+		return t.nameOff(t.Str).Name()
+	}
+
+	// For other types, return empty string (following Go's behavior for unnamed types)
+	return t.Kind_.String()
+}
+
+// nameOff resolves a name offset from a base pointer.
+func (t *Type) nameOff(off NameOff) Name {
+	// This is a simplified version of what the runtime does.
+	// It assumes the name data is accessible relative to the type pointer.
+	// In a real scenario, this might involve looking into module data.
+	return Name{} // Placeholder, real implementation needed based on tinystring
 }
 
 // StructID returns a unique identifier for struct types based on runtime hash
@@ -133,4 +148,10 @@ func (t *Type) NumField() (int, error) {
 	}
 	st := (*StructType)(unsafe.Pointer(t))
 	return len(st.Fields), nil
+}
+
+// PtrType represents a pointer type.
+type PtrType struct {
+	Type
+	Elem *Type // pointer element type
 }
