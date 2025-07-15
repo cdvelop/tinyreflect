@@ -145,6 +145,11 @@ func (v Value) Field(i int) (Value, error) {
 	return Value{typ, ptr, fl}, nil
 }
 
+// Type returns v's type.
+func (v Value) Type() *Type {
+	return v.typ()
+}
+
 // typ returns the *abi.Type stored in the Value. This method is fast,
 // but it doesn't always return the correct type for the Value.
 // See abiType and Type, which do return the correct type.

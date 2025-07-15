@@ -1,8 +1,6 @@
 package tinyreflect
 
-import (
-	"unsafe"
-)
+import "unsafe"
 
 type Name struct {
 	Bytes *byte

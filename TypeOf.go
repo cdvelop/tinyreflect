@@ -155,3 +155,18 @@ type PtrType struct {
 	Type
 	Elem *Type // pointer element type
 }
+
+// Name returns the name of a struct type's i'th field.
+// It panics if the type's Kind is not Struct.
+// It panics if i is out of range.
+func (t *Type) NameByIndex(i int) (string, error) {
+	if t.Kind() != K.Struct {
+		return "", Err(ref, D.Type, D.NotOfType, D.Struct)
+	}
+	tt := (*StructType)(unsafe.Pointer(t))
+	if i < 0 || i >= len(tt.Fields) {
+		return "", Err(ref, D.Index, D.Out, D.Of, D.Range)
+	}
+	f := &tt.Fields[i]
+	return f.Name.Name(), nil
+}
