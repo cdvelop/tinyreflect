@@ -57,7 +57,7 @@ func TestUniqueStructIdentification(t *testing.T) {
 
 			// Test struct ID generation
 			structID := typ.StructID()
-			t.Logf("StructID: %s", structID)
+			t.Logf("StructID: %d", structID)
 
 			// Test name
 			name := typ.Name()
@@ -78,7 +78,7 @@ func TestUniqueStructIdentification(t *testing.T) {
 			}
 
 			// Verify StructID is not empty for structs
-			if typ.Kind().String() == "struct" && structID == "" {
+			if typ.Kind().String() == "struct" && structID == 0 {
 				t.Error("StructID should not be empty for struct types")
 			}
 		})
@@ -131,15 +131,15 @@ func TestSameStructSameHash(t *testing.T) {
 	id3 := type3.StructID()
 	id4 := type4.StructID()
 
-	t.Logf("StructID 1: %s", id1)
-	t.Logf("StructID 2: %s", id2)
-	t.Logf("StructID 3: %s", id3)
-	t.Logf("StructID 4: %s", id4)
+	t.Logf("StructID 1: %d", id1)
+	t.Logf("StructID 2: %d", id2)
+	t.Logf("StructID 3: %d", id3)
+	t.Logf("StructID 4: %d", id4)
 
 	if id1 != id2 || id1 != id3 || id1 != id4 {
 		t.Errorf("CRITICAL: StructID inconsistency! Same struct type must have same StructID")
-		t.Errorf("Expected all to be: %s", id1)
-		t.Errorf("Got: %s, %s, %s, %s", id1, id2, id3, id4)
+		t.Errorf("Expected all to be: %d", id1)
+		t.Errorf("Got: %d, %d, %d, %d", id1, id2, id3, id4)
 		t.Error("IMPLEMENTATION REJECTED: Must create custom hash based on struct fields")
 	} else {
 		t.Log("SUCCESS: Same struct type has consistent StructID across different initializations")

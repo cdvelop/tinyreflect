@@ -93,7 +93,7 @@ id := t.StructID()
 - `Type.NameByIndex(i int) (string, error)` — Name of the i-th field.
 - `Type.Field(i int) (StructField, error)` — Info about the i-th field.
 - `Type.Kind() Kind` — Base type (struct, int, string, etc).
-- `Type.StructID() string` — Unique identifier for the struct type.
+- `Type.StructID() uint32` — Unique identifier for the struct type.
 
 > No functions related to methods, interfaces, struct names, or advanced reflection are exposed. The API is deliberately minimal and robust against misuse.
 

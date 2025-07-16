@@ -104,12 +104,12 @@ func (t *Type) nameOff(off NameOff) Name {
 }
 
 // StructID returns a unique identifier for struct types based on runtime hash
-// Returns empty string for non-struct types
-func (t *Type) StructID() string {
+// Returns 0 for non-struct types
+func (t *Type) StructID() uint32 {
 	if t.Kind() == K.Struct {
-		return Convert(t.Hash).String()
+		return t.Hash
 	}
-	return ""
+	return 0
 }
 
 // StructType returns t cast to a *StructType, or nil if its tag does not match.
