@@ -11,10 +11,11 @@ type flag uintptr
 const (
 	flagKindWidth      = 5 // there are 27 kinds
 	flagKindMask  flag = 1<<flagKindWidth - 1
-	flagIndir     flag = 1 << 7
 	flagStickyRO  flag = 1 << 5
 	flagEmbedRO   flag = 1 << 6
+	flagIndir     flag = 1 << 7
 	flagAddr      flag = 1 << 8
+	flagRO        flag = flagStickyRO | flagEmbedRO
 )
 
 // TinyReflect - Minimal reflection library optimized for TinyGo/WebAssembly
@@ -86,20 +87,32 @@ func unpackEface(i any) Value {
 // It panics if v's Kind is not Ptr.
 // It returns the zero Value if v is a nil pointer.
 func (v Value) Elem() (Value, error) {
-	if v.kind() != K.Pointer {
-		return Value{}, Err(ref, D.Value, D.NotOfType, D.Pointer)
-	}
-	if v.ptr == nil {
-		return Value{}, nil
-	}
+	k := v.kind()
+	switch k {
+	case K.Interface:
+		// Interface handling - simplified version
+		// For now we'll return an error for interfaces
+		return Value{}, Err(ref, D.Not, D.Supported, "interface elem not yet implemented")
 
-	tt := (*PtrType)(unsafe.Pointer(v.typ()))
-	typ := tt.Elem
-	fl := v.flag&^flagKindMask | flag(typ.Kind())
-	fl &^= flagStickyRO | flagEmbedRO
-	fl |= flagIndir | flagAddr
-	ptr := v.ptr
-	return Value{typ, ptr, fl}, nil
+	case K.Pointer:
+		ptr := v.ptr
+		if v.flag&flagIndir != 0 {
+			ptr = *(*unsafe.Pointer)(ptr)
+		}
+		// The returned value's address is v's value.
+		if ptr == nil {
+			return Value{}, nil
+		}
+		tt := (*PtrType)(unsafe.Pointer(v.typ()))
+		if tt.Elem == nil {
+			return Value{}, Err(ref, D.Value, D.Type, D.Nil)
+		}
+		typ := tt.Elem
+		fl := v.flag&flagRO | flagIndir | flagAddr
+		fl |= flag(typ.Kind())
+		return Value{typ, ptr, fl}, nil
+	}
+	return Value{}, Err(ref, D.Value, D.NotOfType, D.Pointer)
 }
 
 func (v Value) NumField() (int, error) {
@@ -201,4 +214,103 @@ func (f flag) kind() Kind {
 func NoEscape(p unsafe.Pointer) unsafe.Pointer {
 	x := uintptr(p)
 	return unsafe.Pointer(x)
+}
+
+// Kind returns the specific kind of this value.
+func (v Value) Kind() Kind {
+	return v.kind()
+}
+
+// CanAddr reports whether the value's address can be obtained with [Value.Addr].
+// Such values are called addressable. A value is addressable if it is
+// an element of a slice, an element of an addressable array,
+// a field of an addressable struct, or the result of dereferencing a pointer.
+// If CanAddr returns false, calling [Value.Addr] will panic.
+func (v Value) CanAddr() bool {
+	return v.flag&flagAddr != 0
+}
+
+// String returns the string v's underlying value, as a string.
+// String is a special case because of Go's String method convention.
+// Unlike the other getters, it does not panic if v's Kind is not String.
+// Instead, it returns a string of the form "<T value>" where T is v's type.
+func (v Value) String() string {
+	// stringNonString is split out to keep String inlineable for string kinds.
+	if v.kind() == K.String {
+		return *(*string)(v.ptr)
+	}
+	return v.stringNonString()
+}
+
+func (v Value) stringNonString() string {
+	if v.kind() == K.Invalid {
+		return "<invalid Value>"
+	}
+	// If you call String on a reflect.Value of other type, it's better to
+	// print something than to panic. Useful in debugging.
+	return "<" + v.Type().String() + " Value>"
+}
+
+// Int returns v's underlying value, as an int64.
+// It returns an error if v's Kind is not Int, Int8, Int16, Int32, or Int64.
+func (v Value) Int() (int64, error) {
+	k := v.kind()
+	p := v.ptr
+	switch k {
+	case K.Int:
+		return int64(*(*int)(p)), nil
+	case K.Int8:
+		return int64(*(*int8)(p)), nil
+	case K.Int16:
+		return int64(*(*int16)(p)), nil
+	case K.Int32:
+		return int64(*(*int32)(p)), nil
+	case K.Int64:
+		return *(*int64)(p), nil
+	}
+	return 0, Err(ref, D.Value, D.NotOfType, "int")
+}
+
+// Uint returns v's underlying value, as a uint64.
+// It returns an error if v's Kind is not Uint, Uint8, Uint16, Uint32, or Uint64.
+func (v Value) Uint() (uint64, error) {
+	k := v.kind()
+	p := v.ptr
+	switch k {
+	case K.Uint:
+		return uint64(*(*uint)(p)), nil
+	case K.Uint8:
+		return uint64(*(*uint8)(p)), nil
+	case K.Uint16:
+		return uint64(*(*uint16)(p)), nil
+	case K.Uint32:
+		return uint64(*(*uint32)(p)), nil
+	case K.Uint64:
+		return *(*uint64)(p), nil
+	case K.Uintptr:
+		return uint64(*(*uintptr)(p)), nil
+	}
+	return 0, Err(ref, D.Value, D.NotOfType, "uint")
+}
+
+// Float returns v's underlying value, as a float64.
+// It returns an error if v's Kind is not Float32 or Float64.
+func (v Value) Float() (float64, error) {
+	k := v.kind()
+	switch k {
+	case K.Float32:
+		return float64(*(*float32)(v.ptr)), nil
+	case K.Float64:
+		return *(*float64)(v.ptr), nil
+	}
+	return 0, Err(ref, D.Value, D.NotOfType, "float")
+}
+
+// Bool returns v's underlying value.
+// It returns an error if v's Kind is not Bool.
+func (v Value) Bool() (bool, error) {
+	if v.kind() != K.Bool {
+		return false, Err(ref, D.Value, D.NotOfType, "bool")
+	}
+	return *(*bool)(v.ptr), nil
 }

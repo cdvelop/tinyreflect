@@ -170,3 +170,27 @@ func (t *Type) NameByIndex(i int) (string, error) {
 	f := &tt.Fields[i]
 	return f.Name.Name(), nil
 }
+
+// SliceType returns t cast to a *SliceType, or nil if its tag does not match.
+func (t *Type) SliceType() *SliceType {
+	if t.Kind() != K.Slice {
+		return nil
+	}
+	return (*SliceType)(unsafe.Pointer(t))
+}
+
+// ArrayType returns t cast to a *ArrayType, or nil if its tag does not match.
+func (t *Type) ArrayType() *ArrayType {
+	if t.Kind() != K.Array {
+		return nil
+	}
+	return (*ArrayType)(unsafe.Pointer(t))
+}
+
+// PtrType returns t cast to a *PtrType, or nil if its tag does not match.
+func (t *Type) PtrType() *PtrType {
+	if t.Kind() != K.Pointer {
+		return nil
+	}
+	return (*PtrType)(unsafe.Pointer(t))
+}
