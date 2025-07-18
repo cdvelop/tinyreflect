@@ -1,7 +1,6 @@
 package tinyreflect_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/cdvelop/tinyreflect"
@@ -63,6 +62,5 @@ func TestGetFieldName(t *testing.T) {
 			t.Errorf("Field %d: expected Label %s, got %s", i, expectedFields[i].Label, label)
 		}
 
-		fmt.Printf("Field %d: %s (Type: %s, Tag: '%s', Label: '%s')\n", i, field.Name.String(), field.Typ.String(), string(field.Tag()), label)
 	}
 }

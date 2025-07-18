@@ -19,7 +19,7 @@ func Indirect(v Value) Value {
 	// Use the existing Elem() method to get the pointed-to value
 	elem, err := v.Elem()
 	if err != nil {
-		// If there's an error (e.g., nil pointer), return zero value
+		// If there's an error, return zero value - this preserves standard library behavior
 		return Value{}
 	}
 
@@ -95,9 +95,44 @@ func New(typ *Type) Value {
 		return Value{}
 	}
 
-	// For now, return a simplified implementation
-	// TODO: Implement proper pointer creation
-	return Value{}
+	// Step 1: Allocate memory for the pointed-to value
+	size := typ.Size
+	if size == 0 {
+		size = 1 // Minimum allocation size
+	}
+
+	// Allocate memory for the actual value
+	valueData := make([]byte, size)
+	valuePtr := unsafe.Pointer(&valueData[0])
+
+	// Step 2: Allocate memory for the pointer itself
+	ptrData := make([]byte, unsafe.Sizeof(uintptr(0)))
+	ptrPtr := unsafe.Pointer(&ptrData[0])
+
+	// Step 3: Store the pointer to the value in the pointer memory
+	*(*unsafe.Pointer)(ptrPtr) = valuePtr
+
+	// Step 4: Create a basic PtrType structure
+	ptrType := &PtrType{
+		Type: Type{
+			Size:        unsafe.Sizeof(uintptr(0)), // Size of a pointer
+			PtrBytes:    unsafe.Sizeof(uintptr(0)), // All bytes are pointer bytes
+			Hash:        typ.Hash ^ 0x12345678,     // Simple hash variation for pointer type
+			TFlag:       0,                         // No special flags
+			Align_:      8,                         // Pointer alignment (64-bit)
+			FieldAlign_: 8,                         // Field alignment for pointers
+			Kind_:       K.Pointer,                 // This is a pointer type
+			Equal:       nil,                       // Simplified
+			GCData:      nil,                       // Simplified
+			Str:         0,                         // No name for generated pointer types
+			PtrToThis:   0,                         // Not implemented
+		},
+		Elem: typ, // Points to the given type
+	}
+
+	// Return Value with pointer flags
+	fl := flag(K.Pointer) | flagIndir
+	return Value{&ptrType.Type, ptrPtr, fl}
 }
 
 // Zero returns a Value representing the zero value for the specified type.

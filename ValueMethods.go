@@ -166,27 +166,32 @@ func (v Value) Addr() (Value, error) {
 		return Value{}, Err(D.Value, D.Not, "addressable")
 	}
 
+	if v.typ_ == nil {
+		return Value{}, Err(D.Value, D.Type, D.Nil)
+	}
+
 	// Create a pointer type for the value's type
-	var ptrType *Type
-	if v.typ_ != nil {
-		// Create a pointer type - this is simplified
-		// In a real implementation we'd need proper pointer type creation
-		ptrType = &Type{
+	// This is a simplified version - ideally we'd use a proper PtrTo function
+	ptrType := &PtrType{
+		Type: Type{
 			Size:        unsafe.Sizeof(uintptr(0)),
 			PtrBytes:    unsafe.Sizeof(uintptr(0)),
-			Hash:        v.typ_.Hash ^ 0x12345678, // Simple hash modification
+			Hash:        v.typ_.Hash ^ 0x87654321, // Hash variation for pointer
 			TFlag:       v.typ_.TFlag,
 			Align_:      uint8(unsafe.Alignof(uintptr(0))),
 			FieldAlign_: uint8(unsafe.Alignof(uintptr(0))),
 			Kind_:       K.Pointer,
-		}
+			Equal:       nil,
+			GCData:      nil,
+			Str:         0,
+			PtrToThis:   0,
+		},
+		Elem: v.typ_,
 	}
 
-	// Create a new value that contains the address
-	fl := flag(K.Pointer) | flagIndir
-
-	// The address is the pointer itself
-	return Value{ptrType, unsafe.Pointer(&v.ptr), fl}, nil
+	// Following Go's pattern: use v.ptr directly and preserve flagRO
+	fl := (v.flag & flagRO) | flag(K.Pointer)
+	return Value{&ptrType.Type, v.ptr, fl}, nil
 }
 
 // Set assigns x to the value v.
@@ -211,6 +216,15 @@ func (v Value) Set(x Value) error {
 			// Allow assignment if the underlying structure is compatible
 			if v.typ_.Size == x.typ_.Size {
 				// Types are slice-compatible, proceed with assignment
+			} else {
+				return Err(D.Value, D.Of, D.Type, x.typ_.String(), D.Not, "assignable", D.Type, v.typ_.String())
+			}
+		} else if v.typ_.Kind() == K.Pointer && x.typ_.Kind() == K.Pointer {
+			// For pointers, check if they point to compatible types
+			vElem := v.typ_.Elem()
+			xElem := x.typ_.Elem()
+			if vElem != nil && xElem != nil && vElem == xElem {
+				// Pointer types with same element type are compatible
 			} else {
 				return Err(D.Value, D.Of, D.Type, x.typ_.String(), D.Not, "assignable", D.Type, v.typ_.String())
 			}

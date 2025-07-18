@@ -194,3 +194,20 @@ func (t *Type) PtrType() *PtrType {
 	}
 	return (*PtrType)(unsafe.Pointer(t))
 }
+
+// Elem returns the element type for t if t is an array, channel, map, pointer, or slice, otherwise nil.
+func (t *Type) Elem() *Type {
+	switch t.Kind() {
+	case K.Array:
+		tt := (*ArrayType)(unsafe.Pointer(t))
+		return tt.Elem
+	case K.Pointer:
+		tt := (*PtrType)(unsafe.Pointer(t))
+		return tt.Elem
+	case K.Slice:
+		tt := (*SliceType)(unsafe.Pointer(t))
+		return tt.Elem
+	default:
+		return nil
+	}
+}

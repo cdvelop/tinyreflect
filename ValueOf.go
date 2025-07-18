@@ -103,11 +103,11 @@ func (v Value) Elem() (Value, error) {
 		if ptr == nil {
 			return Value{}, nil
 		}
-		tt := (*PtrType)(unsafe.Pointer(v.typ()))
-		if tt.Elem == nil {
+		// Use the Type.Elem() method to get the element type
+		typ := v.typ().Elem()
+		if typ == nil {
 			return Value{}, Err(ref, D.Value, D.Type, D.Nil)
 		}
-		typ := tt.Elem
 		fl := v.flag&flagRO | flagIndir | flagAddr
 		fl |= flag(typ.Kind())
 		return Value{typ, ptr, fl}, nil
@@ -160,6 +160,10 @@ func (v Value) Field(i int) (Value, error) {
 
 // Type returns v's type.
 func (v Value) Type() *Type {
+	if v.typ_ == nil {
+		// This is where "value type nil" error would come from
+		return nil
+	}
 	return v.typ()
 }
 
