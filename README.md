@@ -7,7 +7,6 @@
 Minimal Go reflect package from reflectlite, WebAssembly and TinyGo destination
 
 
-
 ## Why TinyReflect?
 
 **Go's WebAssembly potential is incredible**, but traditional applications face a critical challenge: **massive binary sizes** that make web deployment impractical.
