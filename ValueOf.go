@@ -121,7 +121,7 @@ func (v Value) NumField() (int, error) {
 	}
 	st := v.typ_.StructType()
 	if st == nil {
-		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, D.Struct)
+		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, "Struct")
 	}
 	return len(st.Fields), nil
 }
@@ -130,7 +130,7 @@ func (v Value) NumField() (int, error) {
 // Returns an error if v is not a struct or i is out of range.
 func (v Value) Field(i int) (Value, error) {
 	if v.kind() != K.Struct {
-		return Value{}, Err(ref, D.Value, D.NotOfType, D.Struct)
+		return Value{}, Err(ref, D.Value, D.NotOfType, "Struct")
 	}
 	tt := (*StructType)(unsafe.Pointer(v.typ()))
 	if uint(i) >= uint(len(tt.Fields)) {

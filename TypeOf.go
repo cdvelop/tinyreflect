@@ -131,7 +131,7 @@ func (t *Type) IfaceIndir() bool {
 // It returns an error if the type is not a struct or the index is out of range.
 func (t *Type) Field(i int) (StructField, error) {
 	if t.Kind() != K.Struct {
-		return StructField{}, Err(ref, D.Field, D.NotOfType, D.Struct)
+		return StructField{}, Err(ref, D.Field, D.NotOfType, "Struct")
 	}
 	st := (*StructType)(unsafe.Pointer(t))
 	if i < 0 || i >= len(st.Fields) {
@@ -144,7 +144,7 @@ func (t *Type) Field(i int) (StructField, error) {
 // It returns an error if the type is not a struct.
 func (t *Type) NumField() (int, error) {
 	if t.Kind() != K.Struct {
-		return 0, Err(ref, D.Numbers, D.Fields, D.Type, D.Struct)
+		return 0, Err(ref, D.Numbers, D.Fields, D.Type, "Struct")
 	}
 	st := (*StructType)(unsafe.Pointer(t))
 	return len(st.Fields), nil
@@ -161,7 +161,7 @@ type PtrType struct {
 // It panics if i is out of range.
 func (t *Type) NameByIndex(i int) (string, error) {
 	if t.Kind() != K.Struct {
-		return "", Err(ref, D.Type, D.NotOfType, D.Struct)
+		return "", Err(ref, D.Type, D.NotOfType, "Struct")
 	}
 	tt := (*StructType)(unsafe.Pointer(t))
 	if i < 0 || i >= len(tt.Fields) {

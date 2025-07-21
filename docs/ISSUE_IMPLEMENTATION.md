@@ -37,7 +37,7 @@ TinyReflect is a minimal Go reflection package designed for WebAssembly and Tiny
 TinyReflect integrates with TinyString's multilingual error system which provides translations for error messages in 9 languages.
 
 ### How It Works
-1. **Dictionary Constants**: Use predefined constants from `D` struct (e.g., `D.Field`, `D.Type`, `D.Struct`)
+1. **Dictionary Constants**: Use predefined constants from `D` struct (e.g., `D.Field`, `D.Type`, `"Struct"`)
 2. **Ref Constant**: The word "reflect" cannot be translated, so it's defined as `const ref = "reflect"`
 3. **Error Creation**: Use `Err(ref, D.Constant1, D.Constant2, ...)` to compose multilingual error messages
 4. **Available Constants**: Check `dictionary.go` in tinystring for all available translated terms
@@ -48,14 +48,14 @@ TinyReflect integrates with TinyString's multilingual error system which provide
 return StructField{}, Err(ref, D.Field, D.Out, D.Of, D.Range)
 
 // Error: field not of type struct  
-return StructField{}, Err(ref, D.Field, D.Type, D.Struct)
+return StructField{}, Err(ref, D.Field, D.Type, "Struct")
 ```
 
 ### Available Dictionary Terms for Reflection
 Key terms available in `D` struct:
 - `D.Field`, `D.Fields` - field/fields
 - `D.Type` - type
-- `D.Struct` - struct
+- `"Struct"` - struct
 - `D.Value` - value
 - `D.Range` - range
 - `D.Out`, `D.Of` - out, of
@@ -287,7 +287,7 @@ User struct (ID, Email, Active): 2636023213.struct
 - **Constant**: `const ref = "reflect"` (non-translatable technical term)
 - **Usage**: `Err(ref, D.Field, D.Out, D.Of, D.Range)` for "reflect field out of range"
 - **Multilingual**: Automatically translates using TinyString's 9-language dictionary
-- **Available Terms**: D.Field, D.Type, D.Struct, D.Value, D.Range, D.Numbers, etc.
+- **Available Terms**: D.Field, D.Type, "Struct", D.Value, D.Range, D.Numbers, etc.
 
 Last Updated: Phase 1 COMPLETED - All core functionality working with proper multilingual error support
 Next Action: Begin Phase 2 - Review StructType.go and extend type support
