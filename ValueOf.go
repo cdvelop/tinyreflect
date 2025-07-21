@@ -216,8 +216,8 @@ func (f flag) kind() Kind {
 //go:nosplit
 //go:nocheckptr
 func NoEscape(p unsafe.Pointer) unsafe.Pointer {
-	x := uintptr(p)
-	return unsafe.Pointer(x)
+	x := uintptr(p)          //nolint:govet
+	return unsafe.Pointer(x) //nolint:govet
 }
 
 // Kind returns the specific kind of this value.
