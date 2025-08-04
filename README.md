@@ -100,3 +100,6 @@ id := t.StructID()
 ## Important: Reflection Limitations in TinyGo
 
 > **Note:** TinyReflect cannot obtain the textual name of a struct (like "Customer") in TinyGo, because TinyGo removes these metadata from the binary. See [docs/LIMITATIONS_REFLECT_TINYGO.md](docs/LIMITATIONS_REFLECT_TINYGO.md) for a detailed technical explanation and recommended alternatives.
+
+---
+## [Contributing](docs/CONTRIBUTING.md)
