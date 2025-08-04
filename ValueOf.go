@@ -237,7 +237,7 @@ func (v Value) CanAddr() bool {
 // String returns the string v's underlying value, as a string.
 // String is a special case because of Go's String method convention.
 // Unlike the other getters, it does not panic if v's Kind is not String.
-// Instead, it returns a string of the form "<T value>" where T is v's type.
+// Instead, it returns a string of the form "<Translate value>" where Translate is v's type.
 func (v Value) String() string {
 	// stringNonString is split out to keep String inlineable for string kinds.
 	if v.kind() == K.String {

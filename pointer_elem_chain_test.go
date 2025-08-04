@@ -9,24 +9,24 @@ func TestPointerTypeElemChain(t *testing.T) {
 	var p *int
 	typ1 := TypeOf(p)
 	t.Logf("Type of *int: %p, Kind: %v", typ1, typ1.Kind())
-	
+
 	elem1 := typ1.Elem()
 	if elem1 == nil {
 		t.Fatal("Elem of *int should not be nil")
 	}
 	t.Logf("Elem of *int: %p, Kind: %v", elem1, elem1.Kind())
-	
+
 	// Test pointer to pointer
 	var pp **int
 	typ2 := TypeOf(pp)
 	t.Logf("Type of **int: %p, Kind: %v", typ2, typ2.Kind())
-	
+
 	elem2 := typ2.Elem()
 	if elem2 == nil {
 		t.Fatal("Elem of **int is nil!")
 	}
 	t.Logf("Elem of **int: %p, Kind: %v", elem2, elem2.Kind())
-	
+
 	// Test elem of elem
 	elem2elem := elem2.Elem()
 	if elem2elem == nil {

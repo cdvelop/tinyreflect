@@ -112,29 +112,29 @@ func TestNewElemBehavior(t *testing.T) {
 		for _, sample := range basicTypes {
 			sampleType := TypeOf(sample)
 			if sampleType == nil {
-				t.Errorf("TypeOf returned nil for %T", sample)
+				t.Errorf("TypeOf returned nil for %Translate", sample)
 				continue
 			}
 
 			newPtr := New(sampleType)
 			if newPtr.Type() == nil {
-				t.Errorf("New() returned value with nil type for %T", sample)
+				t.Errorf("New() returned value with nil type for %Translate", sample)
 				continue
 			}
 
 			// Verify it's a pointer
 			if newPtr.Kind() != K.Pointer {
-				t.Errorf("Expected pointer kind for %T, got %v", sample, newPtr.Kind())
+				t.Errorf("Expected pointer kind for %Translate, got %v", sample, newPtr.Kind())
 			}
 
 			// Verify not nil
 			isNil, err := newPtr.IsNil()
 			if err != nil {
-				t.Errorf("IsNil() failed for %T: %v", sample, err)
+				t.Errorf("IsNil() failed for %Translate: %v", sample, err)
 				continue
 			}
 			if isNil {
-				t.Errorf("New() created nil pointer for %T", sample)
+				t.Errorf("New() created nil pointer for %Translate", sample)
 			}
 		}
 	})
