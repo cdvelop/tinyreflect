@@ -65,17 +65,25 @@ type User struct {
     Age  int
 }
 
+// IMPORTANT: For struct name resolution, implement StructNamer interface
+func (User) StructName() string {
+    return "User"
+}
+
 u := User{"Alice", 42}
 v := tinyreflect.ValueOf(u)
 t := v.Type()
 
+// Get the struct name (requires StructNamer interface)
+name := t.Name() // Returns "User" if StructNamer is implemented, "struct" otherwise
+
 // Iterate fields and get name and value
 num, _ := t.NumField()
 for i := 0; i < num; i++ {
-    name, _ := t.NameByIndex(i)
+    fieldName, _ := t.NameByIndex(i)
     field, _ := v.Field(i)
     value, _ := field.Interface()
-    // name: field name, value: field value
+    // fieldName: field name, value: field value
 }
 
 // Unique type identifier (alternative to struct name)
@@ -88,18 +96,65 @@ id := t.StructID()
 - `Value.Type() *Type` — Get the reflected type.
 - `Value.Field(i int) (Value, error)` — Get the i-th field of a struct value.
 - `Value.Interface() (any, error)` — Get the value as interface{}.
+- `Type.Name() string` — Get type name (requires StructNamer for structs).
 - `Type.NumField() (int, error)` — Number of fields in a struct.
 - `Type.NameByIndex(i int) (string, error)` — Name of the i-th field.
 - `Type.Field(i int) (StructField, error)` — Info about the i-th field.
 - `Type.Kind() Kind` — Base type (struct, int, string, etc).
 - `Type.StructID() uint32` — Unique identifier for the struct type.
 
-> No functions related to methods, interfaces, struct names, or advanced reflection are exposed. The API is deliberately minimal and robust against misuse.
+> No functions related to methods, interfaces, or advanced reflection are exposed. The API is deliberately minimal and robust against misuse.
 
 
-## Important: Reflection Limitations in TinyGo
+## Important: Struct Name Resolution in TinyGo
 
-> **Note:** TinyReflect cannot obtain the textual name of a struct (like "Customer") in TinyGo, because TinyGo removes these metadata from the binary. See [docs/LIMITATIONS_REFLECT_TINYGO.md](docs/LIMITATIONS_REFLECT_TINYGO.md) for a detailed technical explanation and recommended alternatives.
+**TinyReflect requires struct types to implement the `StructNamer` interface to provide their name.**
+
+```go
+type StructNamer interface {
+    StructName() string
+}
+```
+
+### Why This Limitation Exists
+
+TinyGo removes type metadata (including struct names) from compiled binaries to reduce size. Unlike standard Go, runtime type name resolution is not available. To work around this:
+
+1. **With StructNamer**: `Type.Name()` returns the custom name
+2. **Without StructNamer**: `Type.Name()` returns `"struct"`
+3. **Non-struct types**: `Type.Name()` returns the kind name (`"int"`, `"string"`, etc.)
+
+### Example Implementation
+
+```go
+type Customer struct {
+    ID   int
+    Name string
+}
+
+// Required for name resolution in TinyGo
+func (Customer) StructName() string {
+    return "Customer"
+}
+
+// Usage
+c := Customer{ID: 1, Name: "Alice"}
+typ := tinyreflect.TypeOf(c)
+fmt.Println(typ.Name()) // Output: "Customer"
+
+// Without StructNamer interface:
+type Product struct {
+    Title string
+    Price float64
+}
+// No StructName() method defined
+
+p := Product{Title: "Book", Price: 15.99}
+typ2 := tinyreflect.TypeOf(p)
+fmt.Println(typ2.Name()) // Output: "struct"
+```
+
+This approach ensures TinyGo compatibility while allowing applications that need struct names to opt-in via interface implementation.
 
 ---
 ## [Contributing](https://github.com/cdvelop/cdvelop/blob/main/CONTRIBUTING.md)

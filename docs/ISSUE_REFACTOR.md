@@ -15,9 +15,9 @@ This implementation must adhere to TinyString's core principles as outlined in W
 - Decoding: `Convert(r io.Reader).JsonDecode(&struct{}) error` (only pointer for decoding)
 
 ## Buffer Architecture Requirements
-- **All internal JSON methods must use TinyString's buffer system** (`buffOut`, `buffWork`, `buffErr`)
+- **All internal JSON methods must use TinyString's buffer system** (`BuffOut`, `BuffWork`, `BuffErr`)
 - **Private methods must NOT return `(string, error)` pairs** - use buffer destinations instead
-- **Reuse existing buffer methods**: `wrString()`, `wrBytes()`, `getString()`, `rstBuffer()`
+- **Reuse existing buffer methods**: `WrString()`, `wrBytes()`, `GetString()`, `ResetBuffer()`
 - **Follow existing patterns**: See `quote.go`, `num_float.go` for examples of proper buffer usage
 
 ## API Exposure Rules
@@ -49,7 +49,7 @@ This implementation must adhere to TinyString's core principles as outlined in W
 
 ## Implementation Strategy
 1. **Maximum Code Reuse**: Reuse existing TinyString functionality wherever possible:
-   - Use existing buffer system (`buffOut`, `buffWork`, `buffErr`) from `memory.go`
+   - Use existing buffer system (`BuffOut`, `BuffWork`, `BuffErr`) from `memory.go`
    - Reuse existing string escaping logic from `quote.go`
    - Reuse existing numeric parsing from `num_float.go`, `num_int.go`
    - Reuse existing type detection from `Kind_.go`
@@ -92,5 +92,5 @@ JSON functionality must support the following types:
 ## Code Reuse Examples
 - String escaping: Use patterns from `Quote()` method in `quote.go`
 - Number formatting: Use `wrFloat64()`, `wrIntBase()` from existing numeric modules
-- Buffer management: Use `wrString()`, `rstBuffer()`, `getString()` from `memory.go`
+- Buffer management: Use `WrString()`, `ResetBuffer()`, `GetString()` from `memory.go`
 - Error handling: Use `wrErr()` pattern with dictionary terms

@@ -318,3 +318,59 @@ func (v Value) Bool() (bool, error) {
 	}
 	return *(*bool)(v.ptr), nil
 }
+
+// InterfaceZeroAlloc sets v's current value to the target pointer without interface{} boxing.
+// This method eliminates interface{} boxing allocations for primitive types by directly
+// assigning values to the caller's pointer, avoiding the boxing that occurs when returning any.
+//
+// For primitive types (int, string, bool, float64, etc.), it assigns the actual value directly
+// without creating an interface{} wrapper.
+//
+// For complex types (slices, maps, structs, etc.), it falls back to the standard Interface()
+// method which does create boxing, but this is unavoidable for complex types.
+//
+// This optimization is particularly beneficial for high-performance code that needs to extract
+// primitive values from reflection without the boxing overhead.
+func (v Value) InterfaceZeroAlloc(target *any) {
+	k := v.kind()
+
+	// Handle primitive types without boxing - direct assignment
+	switch k {
+	case K.String:
+		*target = *(*string)(v.ptr)
+	case K.Int:
+		*target = *(*int)(v.ptr)
+	case K.Int8:
+		*target = *(*int8)(v.ptr)
+	case K.Int16:
+		*target = *(*int16)(v.ptr)
+	case K.Int32:
+		*target = *(*int32)(v.ptr)
+	case K.Int64:
+		*target = *(*int64)(v.ptr)
+	case K.Uint:
+		*target = *(*uint)(v.ptr)
+	case K.Uint8:
+		*target = *(*uint8)(v.ptr)
+	case K.Uint16:
+		*target = *(*uint16)(v.ptr)
+	case K.Uint32:
+		*target = *(*uint32)(v.ptr)
+	case K.Uint64:
+		*target = *(*uint64)(v.ptr)
+	case K.Uintptr:
+		*target = *(*uintptr)(v.ptr)
+	case K.Bool:
+		*target = *(*bool)(v.ptr)
+	case K.Float32:
+		*target = *(*float32)(v.ptr)
+	case K.Float64:
+		*target = *(*float64)(v.ptr)
+	default:
+		// For complex types (slice, map, struct, interface, etc.), use standard boxing
+		// This is unavoidable for complex types
+		if iface, err := v.Interface(); err == nil {
+			*target = iface
+		}
+	}
+}

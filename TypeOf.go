@@ -6,6 +6,13 @@ import (
 	. "github.com/cdvelop/tinystring"
 )
 
+type cacheEntry struct {
+	key  uintptr
+	name string
+}
+
+var structNameCache []cacheEntry
+
 // TFlag is used by a Type to signal what extra type information is
 // available in the memory directly following the Type value.
 type TFlag uint8
@@ -69,11 +76,42 @@ type Type struct {
 
 // TypeOf returns the reflection Type that represents the dynamic type of i.
 // If i is a nil interface value, TypeOf returns nil.
+//
+// For struct types that implement StructNamer interface, the struct name
+// is cached for later retrieval via Type.Name(). This is required for
+// TinyGo compatibility since runtime type name resolution is not available.
 func TypeOf(i any) *Type {
 	if i == nil {
 		return nil
 	}
 	e := (*EmptyInterface)(unsafe.Pointer(&i))
+	typ := e.Type
+
+	// Check if the type implements StructNamer interface for struct name caching
+	if stName, ok := i.(StructNamer); ok {
+		// Find the underlying struct type
+		underlying := typ
+		for underlying != nil && underlying.Kind() == K.Pointer {
+			underlying = underlying.Elem()
+		}
+		if underlying != nil && underlying.Kind() == K.Struct {
+			key := uintptr(unsafe.Pointer(underlying))
+			name := stName.StructName()
+			// Check if already cached
+			found := false
+			for i, entry := range structNameCache {
+				if entry.key == key {
+					structNameCache[i].name = name
+					found = true
+					break
+				}
+			}
+			if !found {
+				structNameCache = append(structNameCache, cacheEntry{key: key, name: name})
+			}
+		}
+	}
+
 	return e.Type
 }
 
@@ -82,25 +120,21 @@ func (t *Type) String() string {
 }
 
 // Name returns the type's name within its package for a defined type.
-// For TinyGo compatibility, struct names are resolved using the StructDictionary
+// For struct types that implement StructNamer interface, returns the cached name.
+// For struct types that don't implement StructNamer, returns "struct".
+// For other types, returns the kind name (e.g., "int", "string").
+//
+// Note: Due to TinyGo limitations, struct types must implement StructNamer interface
+// to provide their actual name. Without this interface, struct types will return "struct".
 func (t *Type) Name() string {
-	if t.Kind_ == K.Struct {
-		// The original implementation caused a stack overflow due to infinite recursion.
-		// The fix is to resolve the name via the type's name offset (Str),
-		// which is how the standard reflect package does it internally.
-		return t.nameOff(t.Str).Name()
+	key := uintptr(unsafe.Pointer(t))
+	for _, entry := range structNameCache {
+		if entry.key == key {
+			return entry.name
+		}
 	}
 
-	// For other types, return empty string (following Go's behavior for unnamed types)
 	return t.Kind_.String()
-}
-
-// nameOff resolves a name offset from a base pointer.
-func (t *Type) nameOff(off NameOff) Name {
-	// This is a simplified version of what the runtime does.
-	// It assumes the name data is accessible relative to the type pointer.
-	// In a real scenario, this might involve looking into module data.
-	return Name{} // Placeholder, real implementation needed based on tinystring
 }
 
 // StructID returns a unique identifier for struct types based on runtime hash
