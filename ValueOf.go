@@ -197,6 +197,7 @@ func (v Value) typ() *Type {
 // See go.dev/issue/67401.
 //
 //go:linkname add
+//nolint:govet
 func add(p unsafe.Pointer, x uintptr, whySafe string) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(p) + x)
 }

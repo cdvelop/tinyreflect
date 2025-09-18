@@ -60,9 +60,9 @@ func MakeSlice(typ *Type, len, cap int) (Value, error) {
 	elemSize := elemType.Size
 
 	if elemSize == 0 {
-		// For zero-sized elements like struct{}, create a special case
+		// For zero-sized elements like struct{}, use nil Data since no memory is needed
 		sliceHeader := &sliceHeader{
-			Data: unsafe.Pointer(uintptr(1)), // Non-nil dummy pointer
+			Data: nil, // Zero-sized elements don't need backing memory
 			Len:  len,
 			Cap:  cap,
 		}
