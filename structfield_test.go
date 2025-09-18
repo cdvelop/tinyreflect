@@ -2,6 +2,7 @@ package tinyreflect
 
 import (
 	"testing"
+	"unsafe"
 
 	. "github.com/cdvelop/tinystring"
 )
@@ -44,5 +45,27 @@ func TestStructFieldTypes(t *testing.T) {
 		} else {
 			t.Logf("Field %d (%s) has Typ Kind: %v", i, fieldName, field.Typ.Kind())
 		}
+	}
+}
+
+func TestEmbedded(t *testing.T) {
+	type E struct {
+		e int
+	}
+	type S struct {
+		E
+		s int
+	}
+	s := S{}
+	v := ValueOf(s)
+	st := (*StructType)(unsafe.Pointer(v.Type()))
+	f := st.Fields[0]
+	if !f.Embedded() {
+		t.Error("Embedded for embedded field: expected true, got false")
+	}
+
+	f = st.Fields[1]
+	if f.Embedded() {
+		t.Error("Embedded for non-embedded field: expected false, got true")
 	}
 }

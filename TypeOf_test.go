@@ -115,3 +115,107 @@ func TestTypeNameForStruct(t *testing.T) {
 		})
 	}
 }
+
+func TestTypeMethods(t *testing.T) {
+	// Test SliceType
+	slice := []int{}
+	typ := tinyreflect.TypeOf(slice)
+	if typ.SliceType() == nil {
+		t.Error("SliceType: expected non-nil")
+	}
+
+	// Test ArrayType
+	arr := [3]int{}
+	typ = tinyreflect.TypeOf(arr)
+	if typ.ArrayType() == nil {
+		t.Error("ArrayType: expected non-nil")
+	}
+
+	// Test PtrType
+	var p *int
+	typ = tinyreflect.TypeOf(p)
+	if typ.PtrType() == nil {
+		t.Error("PtrType: expected non-nil")
+	}
+
+	// Test StructID
+	s := UserWithName{}
+	typ = tinyreflect.TypeOf(s)
+	if typ.StructID() == 0 {
+		t.Error("StructID: expected non-zero")
+	}
+	i := 123
+	typ = tinyreflect.TypeOf(i)
+	if typ.StructID() != 0 {
+		t.Error("StructID on non-struct: expected 0")
+	}
+
+	// Test StructType
+	typ = tinyreflect.TypeOf(s)
+	if typ.StructType() == nil {
+		t.Error("StructType: expected non-nil")
+	}
+	typ = tinyreflect.TypeOf(i)
+	if typ.StructType() != nil {
+		t.Error("StructType on non-struct: expected nil")
+	}
+
+	// Test Field error
+	_, err := typ.Field(0)
+	if err == nil {
+		t.Error("Field on non-struct: expected an error")
+	}
+
+	// Test NumField error
+	_, err = typ.NumField()
+	if err == nil {
+		t.Error("NumField on non-struct: expected an error")
+	}
+
+	// Test NameByIndex error
+	_, err = typ.NameByIndex(0)
+	if err == nil {
+		t.Error("NameByIndex on non-struct: expected an error")
+	}
+
+	// Test SliceType on non-slice
+	if typ.SliceType() != nil {
+		t.Error("SliceType on non-slice: expected nil")
+	}
+
+	// Test ArrayType on non-array
+	if typ.ArrayType() != nil {
+		t.Error("ArrayType on non-array: expected nil")
+	}
+
+	// Test PtrType on non-pointer
+	if typ.PtrType() != nil {
+		t.Error("PtrType on non-pointer: expected nil")
+	}
+
+	// Test Field with out of range index
+	typ = tinyreflect.TypeOf(s)
+	_, err = typ.Field(2)
+	if err == nil {
+		t.Error("Field with out of range index: expected an error")
+	}
+	_, err = typ.Field(-1)
+	if err == nil {
+		t.Error("Field with negative index: expected an error")
+	}
+
+	// Test NameByIndex with out of range index
+	_, err = typ.NameByIndex(2)
+	if err == nil {
+		t.Error("NameByIndex with out of range index: expected an error")
+	}
+	_, err = typ.NameByIndex(-1)
+	if err == nil {
+		t.Error("NameByIndex with negative index: expected an error")
+	}
+
+	// Test Elem on non-elem type
+	if typ.Elem() != nil {
+		t.Error("Elem on non-elem type: expected nil")
+	}
+}

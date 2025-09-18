@@ -214,7 +214,9 @@ func (v Value) Set(x Value) error {
 		// For slices, check if they have the same element type and structure
 		if v.typ_.Kind() == K.Slice && x.typ_.Kind() == K.Slice {
 			// Allow assignment if the underlying structure is compatible
-			if v.typ_.Size == x.typ_.Size {
+			vElem := v.typ_.Elem()
+			xElem := x.typ_.Elem()
+			if vElem != nil && xElem != nil && vElem == xElem {
 				// Types are slice-compatible, proceed with assignment
 			} else {
 				return Err(D.Value, D.Of, D.Type, x.typ_.String(), D.Not, "assignable", D.Type, v.typ_.String())
