@@ -88,14 +88,33 @@ for i := 0; i < num; i++ {
 
 // Unique type identifier (alternative to struct name)
 id := t.StructID()
+
+// Check if a field value is zero (useful for partial updates)
+field, _ := v.Field(0)
+if field.IsZero() {
+    // Field has zero value
+}
 ```
 
 ### Minimal public API
 
+#### Value Methods
 - `ValueOf(any) Value` — Create a reflected value.
 - `Value.Type() *Type` — Get the reflected type.
 - `Value.Field(i int) (Value, error)` — Get the i-th field of a struct value.
-- `Value.Interface() (any, error)` — Get the value as interface{}.
+- `Value.NumField() (int, error)` — Number of fields in a struct value.
+- `Value.Kind() Kind` — Get the kind of the value.
+- `Value.CanAddr() bool` — Reports whether the value's address can be obtained.
+- `Value.IsZero() bool` — Reports whether v is the zero value for its type.
+- `Value.Elem() (Value, error)` — Returns the value that the pointer points to.
+- `Value.String() string` — Returns the string representation of the value.
+- `Value.Int() (int64, error)` — Returns the value as int64.
+- `Value.Uint() (uint64, error)` — Returns the value as uint64.
+- `Value.Float() (float64, error)` — Returns the value as float64.
+- `Value.Bool() (bool, error)` — Returns the value as bool.
+- `Value.InterfaceZeroAlloc(target *any)` — Sets value to target pointer without boxing.
+
+#### Type Methods
 - `Type.Name() string` — Get type name (requires StructNamer for structs).
 - `Type.NumField() (int, error)` — Number of fields in a struct.
 - `Type.NameByIndex(i int) (string, error)` — Name of the i-th field.

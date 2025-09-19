@@ -320,6 +320,77 @@ func (v Value) Bool() (bool, error) {
 	return *(*bool)(v.ptr), nil
 }
 
+// IsZero reports whether v is the zero value for its type.
+// It mirrors reflect.Value.IsZero() behavior for supported types.
+func (v Value) IsZero() bool {
+	// Handle nil Value (from ValueOf(nil))
+	if v.typ_ == nil {
+		return true
+	}
+
+	switch v.kind() {
+	case K.String:
+		return *(*string)(v.ptr) == ""
+	case K.Bool:
+		return !*(*bool)(v.ptr)
+	case K.Int:
+		return *(*int)(v.ptr) == 0
+	case K.Int8:
+		return *(*int8)(v.ptr) == 0
+	case K.Int16:
+		return *(*int16)(v.ptr) == 0
+	case K.Int32:
+		return *(*int32)(v.ptr) == 0
+	case K.Int64:
+		return *(*int64)(v.ptr) == 0
+	case K.Uint:
+		return *(*uint)(v.ptr) == 0
+	case K.Uint8:
+		return *(*uint8)(v.ptr) == 0
+	case K.Uint16:
+		return *(*uint16)(v.ptr) == 0
+	case K.Uint32:
+		return *(*uint32)(v.ptr) == 0
+	case K.Uint64:
+		return *(*uint64)(v.ptr) == 0
+	case K.Uintptr:
+		return *(*uintptr)(v.ptr) == 0
+	case K.Float32:
+		return *(*float32)(v.ptr) == 0
+	case K.Float64:
+		return *(*float64)(v.ptr) == 0
+	case K.Pointer, K.Interface:
+		return v.ptr == nil
+	case K.Slice:
+		// For slices, check if the data pointer is nil
+		if v.ptr == nil {
+			return true
+		}
+		// Slice header: {data uintptr, len int, cap int}
+		// First field is the data pointer
+		dataPtr := (*uintptr)(v.ptr)
+		return *dataPtr == 0
+	case K.Map:
+		return v.ptr == nil
+	case K.Struct:
+		// Recursively check all fields
+		num, err := v.NumField()
+		if err != nil {
+			return false
+		}
+		for i := 0; i < num; i++ {
+			field, err := v.Field(i)
+			if err != nil || !field.IsZero() {
+				return false
+			}
+		}
+		return true
+	default:
+		// For unsupported types, consider non-zero to be safe
+		return false
+	}
+}
+
 // InterfaceZeroAlloc sets v's current value to the target pointer without interface{} boxing.
 // This method eliminates interface{} boxing allocations for primitive types by directly
 // assigning values to the caller's pointer, avoiding the boxing that occurs when returning any.
