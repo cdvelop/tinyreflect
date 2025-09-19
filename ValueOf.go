@@ -393,10 +393,10 @@ func (v Value) IsZero() bool {
 
 // InterfaceZeroAlloc sets v's current value to the target pointer without interface{} boxing.
 // This method eliminates interface{} boxing allocations for primitive types by directly
-// assigning values to the caller's pointer, avoiding the boxing that occurs when returning any.
+// manipulating the interface{} structure to avoid the boxing that occurs when returning any.
 //
 // For primitive types (int, string, bool, float64, etc.), it assigns the actual value directly
-// without creating an interface{} wrapper.
+// to the interface{} structure without creating boxing overhead.
 //
 // For complex types (slices, maps, structs, etc.), it falls back to the standard Interface()
 // method which does create boxing, but this is unavoidable for complex types.
@@ -404,40 +404,25 @@ func (v Value) IsZero() bool {
 // This optimization is particularly beneficial for high-performance code that needs to extract
 // primitive values from reflection without the boxing overhead.
 func (v Value) InterfaceZeroAlloc(target *any) {
+	if v.typ_ == nil {
+		*target = nil
+		return
+	}
+
 	k := v.kind()
 
-	// Handle primitive types without boxing - direct assignment
+	// For primitive types, use direct unsafe manipulation to avoid boxing
 	switch k {
-	case K.String:
-		*target = *(*string)(v.ptr)
-	case K.Int:
-		*target = *(*int)(v.ptr)
-	case K.Int8:
-		*target = *(*int8)(v.ptr)
-	case K.Int16:
-		*target = *(*int16)(v.ptr)
-	case K.Int32:
-		*target = *(*int32)(v.ptr)
-	case K.Int64:
-		*target = *(*int64)(v.ptr)
-	case K.Uint:
-		*target = *(*uint)(v.ptr)
-	case K.Uint8:
-		*target = *(*uint8)(v.ptr)
-	case K.Uint16:
-		*target = *(*uint16)(v.ptr)
-	case K.Uint32:
-		*target = *(*uint32)(v.ptr)
-	case K.Uint64:
-		*target = *(*uint64)(v.ptr)
-	case K.Uintptr:
-		*target = *(*uintptr)(v.ptr)
-	case K.Bool:
-		*target = *(*bool)(v.ptr)
-	case K.Float32:
-		*target = *(*float32)(v.ptr)
-	case K.Float64:
-		*target = *(*float64)(v.ptr)
+	case K.String, K.Int, K.Int8, K.Int16, K.Int32, K.Int64,
+		K.Uint, K.Uint8, K.Uint16, K.Uint32, K.Uint64, K.Uintptr,
+		K.Bool, K.Float32, K.Float64:
+
+		// Use packEface technique but directly modify the target
+		t := v.typ()
+		e := (*EmptyInterface)(unsafe.Pointer(target))
+		e.Type = t
+		e.Data = v.ptr
+
 	default:
 		// For complex types (slice, map, struct, interface, etc.), use standard boxing
 		// This is unavoidable for complex types
