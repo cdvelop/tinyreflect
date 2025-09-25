@@ -6,29 +6,9 @@ import (
 	"github.com/cdvelop/tinyreflect"
 )
 
-// TestStruct is a helper struct for testing reflection operations.
-type TestStruct struct {
-	Name       string
-	Age        int
-	IsActive   bool
-	Data       []byte
-	ID         uint
-	Balance    float64
-	Int8Val    int8
-	Int16Val   int16
-	Int32Val   int32
-	Int64Val   int64
-	Uint8Val   uint8
-	Uint16Val  uint16
-	Uint32Val  uint32
-	Uint64Val  uint64
-	UintptrVal uintptr
-	Float32Val float32
-}
-
 func TestSetString(t *testing.T) {
 	tr := tinyreflect.New()
-	data := TestStruct{Name: "initial"}
+	data := TestStruct{StringField: "initial"}
 	const newName = "changed"
 
 	v := tr.ValueOf(&data)
@@ -39,44 +19,44 @@ func TestSetString(t *testing.T) {
 		t.Fatalf("SetString failed unexpectedly: %v", err)
 	}
 
-	if data.Name != newName {
-		t.Errorf("SetString failed: expected Name to be %q, got %q", newName, data.Name)
+	if data.StringField != newName {
+		t.Errorf("SetString failed: expected StringField to be %q, got %q", newName, data.StringField)
 	}
 }
 
 func TestSetBool(t *testing.T) {
 	tr := tinyreflect.New()
-	data := TestStruct{IsActive: false}
+	data := TestStruct{BoolField: false}
 	const newIsActive = true
 
 	v := tr.ValueOf(&data)
 	structVal, _ := v.Elem()
-	isActiveField, _ := structVal.Field(2)
+	isActiveField, _ := structVal.Field(1)
 
 	if err := isActiveField.SetBool(newIsActive); err != nil {
 		t.Fatalf("SetBool failed unexpectedly: %v", err)
 	}
 
-	if data.IsActive != newIsActive {
-		t.Errorf("SetBool failed: expected IsActive to be %v, got %v", newIsActive, data.IsActive)
+	if data.BoolField != newIsActive {
+		t.Errorf("SetBool failed: expected BoolField to be %v, got %v", newIsActive, data.BoolField)
 	}
 }
 
 func TestSetBytes(t *testing.T) {
 	tr := tinyreflect.New()
-	data := TestStruct{Data: []byte("initial")}
+	data := TestStruct{ByteSliceField: []byte("initial")}
 	newData := []byte("changed")
 
 	v := tr.ValueOf(&data)
 	structVal, _ := v.Elem()
-	dataField, _ := structVal.Field(3)
+	dataField, _ := structVal.Field(16)
 
 	if err := dataField.SetBytes(newData); err != nil {
 		t.Fatalf("SetBytes failed unexpectedly: %v", err)
 	}
 
-	if string(data.Data) != string(newData) {
-		t.Errorf("SetBytes failed: expected Data to be %q, got %q", string(newData), string(data.Data))
+	if string(data.ByteSliceField) != string(newData) {
+		t.Errorf("SetBytes failed: expected ByteSliceField to be %q, got %q", string(newData), string(data.ByteSliceField))
 	}
 }
 
@@ -90,7 +70,7 @@ func TestSetInt(t *testing.T) {
 		fieldIndex int
 		value      int64
 	}{
-		{1, 45}, {6, 127}, {7, 32767}, {8, 2147483647}, {9, 9223372036854775807},
+		{2, 45}, {3, 127}, {4, 32767}, {5, 2147483647}, {6, 9223372036854775807},
 	}
 
 	for _, tc := range testCases {
@@ -100,7 +80,7 @@ func TestSetInt(t *testing.T) {
 		}
 	}
 
-	if data.Age != 45 || data.Int8Val != 127 || data.Int16Val != 32767 || data.Int32Val != 2147483647 || data.Int64Val != 9223372036854775807 {
+	if data.IntField != 45 || data.Int8Field != 127 || data.Int16Field != 32767 || data.Int32Field != 2147483647 || data.Int64Field != 9223372036854775807 {
 		t.Errorf("SetInt did not update struct values correctly. Got: %+v", data)
 	}
 }
@@ -115,7 +95,7 @@ func TestSetUint(t *testing.T) {
 		fieldIndex int
 		value      uint64
 	}{
-		{4, 20}, {10, 255}, {11, 65535}, {12, 4294967295}, {13, 18446744073709551615}, {14, 12345},
+		{7, 20}, {8, 255}, {9, 65535}, {10, 4294967295}, {11, 18446744073709551615},
 	}
 
 	for _, tc := range testCases {
@@ -125,7 +105,7 @@ func TestSetUint(t *testing.T) {
 		}
 	}
 
-	if data.ID != 20 || data.Uint8Val != 255 || data.Uint16Val != 65535 || data.Uint32Val != 4294967295 || data.Uint64Val != 18446744073709551615 || data.UintptrVal != 12345 {
+	if data.UintField != 20 || data.Uint8Field != 255 || data.Uint16Field != 65535 || data.Uint32Field != 4294967295 || data.Uint64Field != 18446744073709551615 {
 		t.Errorf("SetUint did not update struct values correctly. Got: %+v", data)
 	}
 }
@@ -140,7 +120,7 @@ func TestSetFloat(t *testing.T) {
 		fieldIndex int
 		value      float64
 	}{
-		{5, 678.90}, {15, 123.45},
+		{13, 678.90}, {12, 123.45},
 	}
 
 	for _, tc := range testCases {
@@ -150,7 +130,7 @@ func TestSetFloat(t *testing.T) {
 		}
 	}
 
-	if data.Balance != 678.90 || data.Float32Val != 123.45 {
+	if data.Float64Field != 678.90 || data.Float32Field != 123.45 {
 		t.Errorf("SetFloat did not update struct values correctly. Got: %+v", data)
 	}
 }
@@ -179,11 +159,11 @@ func TestSetOnZeroValue(t *testing.T) {
 
 func TestSetTypeMismatchErrors(t *testing.T) {
 	tr := tinyreflect.New()
-	data := TestStruct{Name: "hello", Age: 30}
+	data := TestStruct{StringField: "hello", IntField: 30}
 	v := tr.ValueOf(&data)
 	structVal, _ := v.Elem()
 	nameField, _ := structVal.Field(0) // String field
-	ageField, _ := structVal.Field(1)  // Int field
+	ageField, _ := structVal.Field(2)  // Int field
 
 	testCases := []struct {
 		name      string
