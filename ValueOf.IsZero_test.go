@@ -8,7 +8,6 @@ import (
 
 // TestIsZero tests the IsZero method for all supported types.
 func TestIsZero(t *testing.T) {
-	tr := tinyreflect.New()
 
 	type SimpleStruct struct{ A int; B string }
 	type NestedStruct struct{ S SimpleStruct; C bool }
@@ -56,7 +55,7 @@ func TestIsZero(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := tr.ValueOf(tt.value)
+			v := tinyreflect.ValueOf(tt.value)
 			result := v.IsZero()
 			if result != tt.expected {
 				t.Errorf("IsZero() = %v, expected %v for %T(%#v)", result, tt.expected, tt.value, tt.value)
@@ -75,7 +74,6 @@ func TestIsZero_ZeroValue(t *testing.T) {
 
 // BenchmarkIsZero benchmarks the IsZero method.
 func BenchmarkIsZero(b *testing.B) {
-	tr := tinyreflect.New()
 	testCases := []struct {
 		name  string
 		value any
@@ -90,7 +88,7 @@ func BenchmarkIsZero(b *testing.B) {
 	}
 
 	for _, tc := range testCases {
-		v := tr.ValueOf(tc.value)
+		v := tinyreflect.ValueOf(tc.value)
 		b.Run(tc.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_ = v.IsZero()

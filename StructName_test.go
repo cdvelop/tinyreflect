@@ -7,7 +7,6 @@ import (
 )
 
 func TestTypeName(t *testing.T) {
-	tr := tinyreflect.New()
 	// Anonymous struct for testing
 	anon := struct {
 		Field1 string
@@ -28,7 +27,7 @@ func TestTypeName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			typ := tr.TypeOf(tt.value)
+			typ := tinyreflect.TypeOf(tt.value)
 			if typ == nil {
 				t.Fatalf("TypeOf returned nil for value %v", tt.value)
 			}

@@ -24,7 +24,6 @@ func TestStructCacheRace(t *testing.T) {
 	)
 
 	for iter := 0; iter < iterations; iter++ {
-		tr := tinyreflect.New()
 
 		start := make(chan struct{})
 		var wg sync.WaitGroup
@@ -36,7 +35,7 @@ func TestStructCacheRace(t *testing.T) {
 				defer wg.Done()
 				<-start
 				for i := 0; i < 32; i++ {
-					if typ := tr.TypeOf(raceStruct{}); typ == nil {
+					if typ := tinyreflect.TypeOf(raceStruct{}); typ == nil {
 						errChan <- fmt.Errorf("TypeOf returned nil")
 						return
 					}

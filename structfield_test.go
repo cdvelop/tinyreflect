@@ -7,7 +7,6 @@ import (
 )
 
 func TestStructFieldTypes(t *testing.T) {
-	tr := tinyreflect.New()
 	type TestStruct struct {
 		Name   string
 		Age    int
@@ -15,7 +14,7 @@ func TestStructFieldTypes(t *testing.T) {
 		Scores []float64
 	}
 
-	typ := tr.TypeOf(TestStruct{})
+	typ := tinyreflect.TypeOf(TestStruct{})
 	if typ == nil {
 		t.Fatal("TypeOf returned nil")
 	}
@@ -48,16 +47,15 @@ func TestStructFieldTypes(t *testing.T) {
 }
 
 func TestEmbedded(t *testing.T) {
-	tr := tinyreflect.New()
 	type E struct {
-		e int
+		value int
 	}
 	type S struct {
 		E
-		s int
+		s string
 	}
 
-	typ := tr.TypeOf(S{})
+	typ := tinyreflect.TypeOf(S{})
 	if typ == nil {
 		t.Fatal("TypeOf returned nil")
 	}
@@ -78,5 +76,20 @@ func TestEmbedded(t *testing.T) {
 	}
 	if field1.Embedded() {
 		t.Error("Embedded for non-embedded field 's': expected false, got true")
+	}
+
+	// Test accessing field within embedded struct
+	s := S{}
+	v := tinyreflect.ValueOf(s)
+	embeddedValue, err := v.Field(0)
+	if err != nil {
+		t.Fatalf("Field(0) on main struct failed: %v", err)
+	}
+	embeddedField, err := embeddedValue.Field(0)
+	if err != nil {
+		t.Fatalf("Field(0) on embedded struct failed: %v", err)
+	}
+	if embeddedField.Kind().String() != "int" {
+		t.Errorf("Embedded field should be int, got %s", embeddedField.Kind())
 	}
 }

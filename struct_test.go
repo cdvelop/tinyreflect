@@ -53,7 +53,6 @@ type TestStruct struct {
 }
 
 func TestTestStructAllFields(t *testing.T) {
-	tr := tinyreflect.New()
 
 	// Initialize all fields with test values
 	strVal := "test string"
@@ -97,7 +96,7 @@ func TestTestStructAllFields(t *testing.T) {
 		IntPtrField:            &intVal,
 	}
 
-	v := tr.ValueOf(data)
+	v := tinyreflect.ValueOf(data)
 	typ := v.Type()
 
 	numFields, err := typ.NumField()

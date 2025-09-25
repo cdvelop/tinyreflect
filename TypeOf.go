@@ -1,7 +1,6 @@
 package tinyreflect
 
 import (
-	"sync/atomic"
 	"unsafe"
 
 	. "github.com/cdvelop/tinystring"
@@ -125,31 +124,6 @@ func (t *Type) NumField() (int, error) {
 	return len(st.Fields), nil
 }
 
-// NumFieldCached returns the number of fields using cache if available.
-// This is used internally for performance optimization.
-func (t *Type) NumFieldCached(tr *TinyReflect) (int, error) {
-	if t.Kind() != K.Struct {
-		return 0, Err(ref, D.Numbers, D.Fields, D.Type, "Struct")
-	}
-
-	// Try cache first
-	if tr != nil {
-		structID := t.StructID()
-		if structID != 0 {
-			count := atomic.LoadInt32(&tr.structCount)
-			for i := int32(0); i < count; i++ {
-				if tr.structCache[i].structID == structID {
-					return int(tr.structCache[i].fieldCount), nil
-				}
-			}
-		}
-	}
-
-	// Fallback to direct access
-	st := (*StructType)(unsafe.Pointer(t))
-	return len(st.Fields), nil
-}
-
 // PtrType represents a pointer type.
 type PtrType struct {
 	Type
@@ -163,40 +137,6 @@ func (t *Type) NameByIndex(i int) (string, error) {
 	if t.Kind() != K.Struct {
 		return "", Err(ref, D.Type, D.NotOfType, "Struct")
 	}
-	tt := (*StructType)(unsafe.Pointer(t))
-	if i < 0 || i >= len(tt.Fields) {
-		return "", Err(ref, D.Index, D.Out, D.Of, D.Range)
-	}
-	f := &tt.Fields[i]
-	return f.Name.Name(), nil
-}
-
-// NameByIndexCached returns the name using cache if available.
-// This is used internally for performance optimization.
-func (t *Type) NameByIndexCached(i int, tr *TinyReflect) (string, error) {
-	if t.Kind() != K.Struct {
-		return "", Err(ref, D.Type, D.NotOfType, "Struct")
-	}
-
-	// Try cache first
-	if tr != nil {
-		structID := t.StructID()
-		if structID != 0 {
-			count := atomic.LoadInt32(&tr.structCount)
-			for j := int32(0); j < count; j++ {
-				if tr.structCache[j].structID == structID {
-					cachedStruct := &tr.structCache[j]
-					if i < 0 || uint(i) >= uint(cachedStruct.fieldCount) {
-						return "", Err(ref, D.Index, D.Out, D.Of, D.Range)
-					}
-					fieldSchema := &cachedStruct.fieldSchemas[i]
-					return string(fieldSchema.fieldName[:fieldSchema.nameLen]), nil
-				}
-			}
-		}
-	}
-
-	// Fallback to direct access
 	tt := (*StructType)(unsafe.Pointer(t))
 	if i < 0 || i >= len(tt.Fields) {
 		return "", Err(ref, D.Index, D.Out, D.Of, D.Range)

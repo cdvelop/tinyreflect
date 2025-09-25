@@ -15,11 +15,10 @@ func BenchmarkValue_InterfaceZeroAlloc(b *testing.B) {
 		BoolField   bool
 	}
 	ts := TestStruct{IntField: 42, StringField: "benchmark", BoolField: true}
-	tr := tinyreflect.New()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		v := tr.ValueOf(ts)
+		v := tinyreflect.ValueOf(ts)
 		var target any
 		if field, err := v.Field(0); err == nil {
 			field.InterfaceZeroAlloc(&target)
@@ -40,8 +39,7 @@ func TestValue_InterfaceZeroAlloc(t *testing.T) {
 		StringField string
 	}
 	ts := TestStruct{IntField: 42, StringField: "test"}
-	tr := tinyreflect.New()
-	v := tr.ValueOf(ts)
+	v := tinyreflect.ValueOf(ts)
 
 	var target any
 	if field, err := v.Field(0); err == nil {
@@ -59,8 +57,7 @@ func TestValue_InterfaceZeroAlloc(t *testing.T) {
 }
 
 func TestKindAndCanAddr(t *testing.T) {
-	tr := tinyreflect.New()
-	v := tr.ValueOf(123)
+	v := tinyreflect.ValueOf(123)
 	if v.Kind().String() != "int" {
 		t.Errorf("Kind for int: expected 'int', got '%s'", v.Kind())
 	}
@@ -69,7 +66,7 @@ func TestKindAndCanAddr(t *testing.T) {
 	}
 
 	i := 123
-	v = tr.ValueOf(&i)
+	v = tinyreflect.ValueOf(&i)
 	elem, _ := v.Elem()
 	if elem.Kind().String() != "int" {
 		t.Errorf("Kind for addressable int: expected 'int', got '%s'", elem.Kind())
@@ -80,7 +77,6 @@ func TestKindAndCanAddr(t *testing.T) {
 }
 
 func TestAllGetters(t *testing.T) {
-	tr := tinyreflect.New()
 	testCases := []struct {
 		name     string
 		value    interface{}
@@ -100,7 +96,7 @@ func TestAllGetters(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			v := tr.ValueOf(tc.value)
+			v := tinyreflect.ValueOf(tc.value)
 			if v.Kind().String() != tc.kind {
 				t.Fatalf("Kind mismatch: expected %s, got %s", tc.kind, v.Kind().String())
 			}
@@ -137,10 +133,12 @@ func TestAllGetters(t *testing.T) {
 }
 
 func TestNumFieldAndField(t *testing.T) {
-	tr := tinyreflect.New()
-	type S struct{ A int; B string }
+	type S struct {
+		A int
+		B string
+	}
 	s := S{}
-	v := tr.ValueOf(s)
+	v := tinyreflect.ValueOf(s)
 
 	n, err := v.NumField()
 	if err != nil || n != 2 {
@@ -154,22 +152,25 @@ func TestNumFieldAndField(t *testing.T) {
 }
 
 func TestFieldUnexported(t *testing.T) {
-	tr := tinyreflect.New()
-	type E struct{ e int }
+	type E struct {
+		value int
+	}
 	type S struct {
 		E
-		s int
 	}
 	s := S{}
-	v := tr.ValueOf(s)
+	v := tinyreflect.ValueOf(s)
 
+	// Test embedded field access
 	f, err := v.Field(0)
 	if err != nil || f.Kind().String() != "struct" {
-		t.Errorf("Field(0) on unexported embedded: got %s, %v; want 'struct', nil", f.Kind(), err)
+		t.Errorf("Field(0) on embedded: got %s, %v; want 'struct', nil", f.Kind(), err)
 	}
 
-	f, err = v.Field(1)
-	if err != nil || f.Kind().String() != "int" {
-		t.Errorf("Field(1) on unexported: got %s, %v; want 'int', nil", f.Kind(), err)
+	// Test accessing field within embedded struct
+	embedded := f
+	embeddedField, err := embedded.Field(0)
+	if err != nil || embeddedField.Kind().String() != "int" {
+		t.Errorf("Field(0) on embedded struct: got %s, %v; want 'int', nil", embeddedField.Kind(), err)
 	}
 }

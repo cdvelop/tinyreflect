@@ -14,7 +14,6 @@ type User struct {
 
 // Test for unique struct identification using hash-based approach
 func TestUniqueStructIdentification(t *testing.T) {
-	tr := tinyreflect.New()
 
 	type Product struct {
 		Title string
@@ -54,7 +53,7 @@ func TestUniqueStructIdentification(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			typ := tr.TypeOf(tt.value)
+			typ := tinyreflect.TypeOf(tt.value)
 
 			// Test struct ID generation
 			structID := typ.StructID()
@@ -91,7 +90,6 @@ func TestUniqueStructIdentification(t *testing.T) {
 // CRITICAL TEST: Same struct type from different initialization locations
 // must have the SAME hash - this validates Go's runtime hash consistency
 func TestSameStructSameHash(t *testing.T) {
-	tr := tinyreflect.New()
 
 	// Initialize User struct from different places
 	user1 := User{}
@@ -100,10 +98,10 @@ func TestSameStructSameHash(t *testing.T) {
 	user4 := createUserPointer()
 
 	// Get types
-	type1 := tr.TypeOf(user1)
-	type2 := tr.TypeOf(user2)
-	type3 := tr.TypeOf(user3)
-	type4 := tr.TypeOf(*user4) // Dereference pointer
+	type1 := tinyreflect.TypeOf(user1)
+	type2 := tinyreflect.TypeOf(user2)
+	type3 := tinyreflect.TypeOf(user3)
+	type4 := tinyreflect.TypeOf(*user4) // Dereference pointer
 
 	// All should have the SAME hash
 	hash1 := type1.Hash

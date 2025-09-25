@@ -12,46 +12,46 @@ func (v Value) Index(i int) (Value, error) {
 	switch v.kind() {
 	case K.Array:
 		if v.typ_ == nil {
-			return Value{tr: v.tr}, Err(D.Value, D.Type, D.Nil)
+			return Value{}, Err(D.Value, D.Type, D.Nil)
 		}
 		arrayType := (*ArrayType)(unsafe.Pointer(v.typ_))
 		if uint(i) >= uint(arrayType.Len) {
-			return Value{tr: v.tr}, Err(D.Index, D.Out, D.Of, D.Range)
+			return Value{}, Err(D.Index, D.Out, D.Of, D.Range)
 		}
 
 		elemType := arrayType.Elem
 		elemAddr := unsafe.Pointer(uintptr(v.ptr) + uintptr(i)*elemType.Size)
 		fl := v.flag&^flagKindMask | flag(elemType.Kind()) | flagIndir | flagAddr
-		return Value{v.tr, elemType, elemAddr, fl}, nil
+		return Value{elemType, elemAddr, fl}, nil
 
 	case K.Slice:
 		sliceHeader := (*sliceHeader)(v.ptr)
 		if uint(i) >= uint(sliceHeader.Len) {
-			return Value{tr: v.tr}, Err(D.Index, D.Out, D.Of, D.Range)
+			return Value{}, Err(D.Index, D.Out, D.Of, D.Range)
 		}
 
 		if v.typ_ == nil {
-			return Value{tr: v.tr}, Err(D.Value, D.Type, D.Nil)
+			return Value{}, Err(D.Value, D.Type, D.Nil)
 		}
 		sliceType := (*SliceType)(unsafe.Pointer(v.typ_))
 		elemType := sliceType.Elem
 		elemAddr := unsafe.Pointer(uintptr(sliceHeader.Data) + uintptr(i)*elemType.Size)
 		fl := v.flag&^flagKindMask | flag(elemType.Kind()) | flagIndir | flagAddr
-		return Value{v.tr, elemType, elemAddr, fl}, nil
+		return Value{elemType, elemAddr, fl}, nil
 
 	case K.String:
 		stringHeader := (*stringHeader)(v.ptr)
 		if uint(i) >= uint(stringHeader.Len) {
-			return Value{tr: v.tr}, Err(D.Index, D.Out, D.Of, D.Range)
+			return Value{}, Err(D.Index, D.Out, D.Of, D.Range)
 		}
 
 		byteAddr := unsafe.Pointer(uintptr(stringHeader.Data) + uintptr(i))
 		fl := flag(K.Uint8) | flagIndir | flagAddr
-		uint8Type := v.tr.TypeOf(uint8(0))
-		return Value{v.tr, uint8Type, byteAddr, fl}, nil
+		uint8Type := TypeOf(uint8(0))
+		return Value{uint8Type, byteAddr, fl}, nil
 	}
 
-	return Value{tr: v.tr}, Err(D.Call, D.Of, "Index", D.Method, v.kind().String(), D.Value)
+	return Value{}, Err(D.Call, D.Of, "Index", D.Method, v.kind().String(), D.Value)
 }
 
 // Len returns v's length.
@@ -121,11 +121,11 @@ func (v Value) IsNil() (bool, error) {
 // It returns an error if CanAddr would return false.
 func (v Value) Addr() (Value, error) {
 	if v.flag&flagAddr == 0 {
-		return Value{tr: v.tr}, Err(D.Value, D.Not, "addressable")
+		return Value{}, Err(D.Value, D.Not, "addressable")
 	}
 
 	if v.typ_ == nil {
-		return Value{tr: v.tr}, Err(D.Value, D.Type, D.Nil)
+		return Value{}, Err(D.Value, D.Type, D.Nil)
 	}
 
 	ptrType := &PtrType{
@@ -134,7 +134,7 @@ func (v Value) Addr() (Value, error) {
 	}
 
 	fl := (v.flag & flagRO) | flag(K.Pointer)
-	return Value{v.tr, &ptrType.Type, v.ptr, fl}, nil
+	return Value{&ptrType.Type, v.ptr, fl}, nil
 }
 
 // Set assigns x to the value v.

@@ -7,7 +7,6 @@ import (
 )
 
 func TestLenAndCap(t *testing.T) {
-	tr := tinyreflect.New()
 	testCases := []struct {
 		name       string
 		value      interface{}
@@ -25,7 +24,7 @@ func TestLenAndCap(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			v := tr.ValueOf(tc.value)
+			v := tinyreflect.ValueOf(tc.value)
 
 			// Test Len()
 			length, err := v.Len()
@@ -49,9 +48,8 @@ func TestLenAndCap(t *testing.T) {
 }
 
 func TestIndex(t *testing.T) {
-	tr := tinyreflect.New()
 	slice := []int{10, 20, 30}
-	vSlice := tr.ValueOf(slice)
+	vSlice := tinyreflect.ValueOf(slice)
 	elem, err := vSlice.Index(1)
 	if err != nil {
 		t.Fatalf("Index failed for slice: %v", err)
@@ -67,7 +65,6 @@ func TestIndex(t *testing.T) {
 }
 
 func TestIsNil(t *testing.T) {
-	tr := tinyreflect.New()
 	var nilSlice []int
 	var nilPtr *int
 	nonNilSlice := []int{1}
@@ -90,7 +87,7 @@ func TestIsNil(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			v := tr.ValueOf(tc.value)
+			v := tinyreflect.ValueOf(tc.value)
 			isNil, err := v.IsNil()
 			if (err != nil) != tc.wantErr {
 				t.Errorf("IsNil() error = %v, wantErr %v", err, tc.wantErr)
@@ -103,9 +100,8 @@ func TestIsNil(t *testing.T) {
 }
 
 func TestAddr(t *testing.T) {
-	tr := tinyreflect.New()
 	i := 123
-	v := tr.ValueOf(&i)
+	v := tinyreflect.ValueOf(&i)
 	elem, _ := v.Elem()
 	addr, err := elem.Addr()
 	if err != nil {
@@ -115,7 +111,7 @@ func TestAddr(t *testing.T) {
 		t.Errorf("Addr: expected kind Pointer, got %s", addr.Kind())
 	}
 
-	v = tr.ValueOf(123)
+	v = tinyreflect.ValueOf(123)
 	_, err = v.Addr()
 	if err == nil {
 		t.Error("Addr for non-addressable value: expected an error, but got nil")
@@ -123,14 +119,13 @@ func TestAddr(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	tr := tinyreflect.New()
 	i1, i2 := 123, 456
 	s1, s2 := "hello", "world"
 
-	v1 := tr.ValueOf(&i1)
-	v2 := tr.ValueOf(&i2)
-	v3 := tr.ValueOf(&s1)
-	v4 := tr.ValueOf(&s2)
+	v1 := tinyreflect.ValueOf(&i1)
+	v2 := tinyreflect.ValueOf(&i2)
+	v3 := tinyreflect.ValueOf(&s1)
+	v4 := tinyreflect.ValueOf(&s2)
 
 	elem1, _ := v1.Elem()
 	elem2, _ := v2.Elem()

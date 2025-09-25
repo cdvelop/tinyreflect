@@ -7,11 +7,10 @@ import (
 )
 
 func TestMakeSlice(t *testing.T) {
-	tr := tinyreflect.New()
 
 	// Test success case
-	sliceType := tr.TypeOf([]int{})
-	v, err := tr.MakeSlice(sliceType, 5, 10)
+	sliceType := tinyreflect.TypeOf([]int{})
+	v, err := tinyreflect.MakeSlice(sliceType, 5, 10)
 	if err != nil {
 		t.Errorf("MakeSlice success: unexpected error: %v", err)
 	}
@@ -26,24 +25,23 @@ func TestMakeSlice(t *testing.T) {
 	}
 
 	// Test nil type
-	_, err = tr.MakeSlice(nil, 0, 0)
+	_, err = tinyreflect.MakeSlice(nil, 0, 0)
 	if err == nil {
 		t.Error("MakeSlice with nil type: expected an error, but got nil")
 	}
 
 	// Test non-slice type
-	intType := tr.TypeOf(0)
-	_, err = tr.MakeSlice(intType, 0, 0)
+	intType := tinyreflect.TypeOf(0)
+	_, err = tinyreflect.MakeSlice(intType, 0, 0)
 	if err == nil {
 		t.Error("MakeSlice with non-slice type: expected an error, but got nil")
 	}
 }
 
 func TestNewValue(t *testing.T) {
-	tr := tinyreflect.New()
-	typ := tr.TypeOf(0) // type int
+	typ := tinyreflect.TypeOf(0) // type int
 
-	v := tr.NewValue(typ)
+	v := tinyreflect.NewValue(typ)
 	if v.Kind().String() != "ptr" {
 		t.Fatalf("NewValue should return a pointer, but got %s", v.Kind())
 	}
@@ -63,11 +61,10 @@ func TestNewValue(t *testing.T) {
 }
 
 func TestIndirect(t *testing.T) {
-	tr := tinyreflect.New()
 
 	// Test with a non-pointer
-	vInt := tr.ValueOf(123)
-	indirectVInt := tr.Indirect(vInt)
+	vInt := tinyreflect.ValueOf(123)
+	indirectVInt := tinyreflect.Indirect(vInt)
 	val, _ := indirectVInt.Int()
 	if val != 123 {
 		t.Errorf("Indirect on non-pointer should return the same value, got %d", val)
@@ -75,8 +72,8 @@ func TestIndirect(t *testing.T) {
 
 	// Test with a pointer
 	i := 456
-	vPtr := tr.ValueOf(&i)
-	indirectVPrt := tr.Indirect(vPtr)
+	vPtr := tinyreflect.ValueOf(&i)
+	indirectVPrt := tinyreflect.Indirect(vPtr)
 	if indirectVPrt.Kind().String() != "int" {
 		t.Errorf("Indirect on pointer should return the element's kind, got %s", indirectVPrt.Kind())
 	}
@@ -87,8 +84,8 @@ func TestIndirect(t *testing.T) {
 
 	// Test with a nil pointer
 	var nilPtr *int
-	vNilPtr := tr.ValueOf(nilPtr)
-	indirectVNilPtr := tr.Indirect(vNilPtr)
+	vNilPtr := tinyreflect.ValueOf(nilPtr)
+	indirectVNilPtr := tinyreflect.Indirect(vNilPtr)
 	if !indirectVNilPtr.IsZero() {
 		t.Error("Indirect on a nil pointer should return a zero value")
 	}

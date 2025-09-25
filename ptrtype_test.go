@@ -7,12 +7,11 @@ import (
 )
 
 func TestPtrTypeMethod(t *testing.T) {
-	tr := tinyreflect.New()
 	// Test with a pointer type
 	x := 42
 	ptr := &x
 
-	v := tr.ValueOf(ptr)
+	v := tinyreflect.ValueOf(ptr)
 	typ := v.Type()
 
 	if typ == nil {
@@ -40,7 +39,7 @@ func TestPtrTypeMethod(t *testing.T) {
 	}
 
 	s := &simpleStruct{}
-	v2 := tr.ValueOf(s)
+	v2 := tinyreflect.ValueOf(s)
 	typ2 := v2.Type()
 
 	if typ2 == nil {

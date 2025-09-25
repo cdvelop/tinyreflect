@@ -7,11 +7,10 @@ import (
 )
 
 func TestSetString(t *testing.T) {
-	tr := tinyreflect.New()
 	data := TestStruct{StringField: "initial"}
 	const newName = "changed"
 
-	v := tr.ValueOf(&data)
+	v := tinyreflect.ValueOf(&data)
 	structVal, _ := v.Elem()
 	nameField, _ := structVal.Field(0)
 
@@ -25,11 +24,10 @@ func TestSetString(t *testing.T) {
 }
 
 func TestSetBool(t *testing.T) {
-	tr := tinyreflect.New()
 	data := TestStruct{BoolField: false}
 	const newIsActive = true
 
-	v := tr.ValueOf(&data)
+	v := tinyreflect.ValueOf(&data)
 	structVal, _ := v.Elem()
 	isActiveField, _ := structVal.Field(1)
 
@@ -43,11 +41,10 @@ func TestSetBool(t *testing.T) {
 }
 
 func TestSetBytes(t *testing.T) {
-	tr := tinyreflect.New()
 	data := TestStruct{ByteSliceField: []byte("initial")}
 	newData := []byte("changed")
 
-	v := tr.ValueOf(&data)
+	v := tinyreflect.ValueOf(&data)
 	structVal, _ := v.Elem()
 	dataField, _ := structVal.Field(16)
 
@@ -61,9 +58,8 @@ func TestSetBytes(t *testing.T) {
 }
 
 func TestSetInt(t *testing.T) {
-	tr := tinyreflect.New()
 	data := TestStruct{}
-	v := tr.ValueOf(&data)
+	v := tinyreflect.ValueOf(&data)
 	structVal, _ := v.Elem()
 
 	testCases := []struct {
@@ -86,9 +82,8 @@ func TestSetInt(t *testing.T) {
 }
 
 func TestSetUint(t *testing.T) {
-	tr := tinyreflect.New()
 	data := TestStruct{}
-	v := tr.ValueOf(&data)
+	v := tinyreflect.ValueOf(&data)
 	structVal, _ := v.Elem()
 
 	testCases := []struct {
@@ -111,9 +106,8 @@ func TestSetUint(t *testing.T) {
 }
 
 func TestSetFloat(t *testing.T) {
-	tr := tinyreflect.New()
 	data := TestStruct{}
-	v := tr.ValueOf(&data)
+	v := tinyreflect.ValueOf(&data)
 	structVal, _ := v.Elem()
 
 	testCases := []struct {
@@ -158,9 +152,8 @@ func TestSetOnZeroValue(t *testing.T) {
 }
 
 func TestSetTypeMismatchErrors(t *testing.T) {
-	tr := tinyreflect.New()
 	data := TestStruct{StringField: "hello", IntField: 30}
-	v := tr.ValueOf(&data)
+	v := tinyreflect.ValueOf(&data)
 	structVal, _ := v.Elem()
 	nameField, _ := structVal.Field(0) // String field
 	ageField, _ := structVal.Field(2)  // Int field

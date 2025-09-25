@@ -8,7 +8,6 @@ import (
 
 // Test_StructIteration iterates over the fields of a struct to verify names and values.
 func Test_StructIteration(t *testing.T) {
-	tr := tinyreflect.New()
 	// Test struct with public and private fields
 	type sampleStruct struct {
 		Name     string
@@ -30,7 +29,7 @@ func Test_StructIteration(t *testing.T) {
 	}
 
 	// Get an addressable reflected value of the instance by taking a pointer and getting the element.
-	v, err := tr.ValueOf(&instance).Elem()
+	v, err := tinyreflect.ValueOf(&instance).Elem()
 	if err != nil {
 		t.Fatalf("Failed to get addressable value: %v", err)
 	}

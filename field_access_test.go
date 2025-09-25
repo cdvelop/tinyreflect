@@ -9,7 +9,6 @@ import (
 // TestFieldAccess tests field access functionality through Value.Field()
 // on both direct structs and pointers to structs.
 func TestFieldAccess(t *testing.T) {
-	tr := tinyreflect.New()
 	type TestStruct struct {
 		Name string
 		ID   int
@@ -18,7 +17,7 @@ func TestFieldAccess(t *testing.T) {
 	s := TestStruct{Name: "test", ID: 42}
 
 	// Test on a direct struct value
-	v := tr.ValueOf(s)
+	v := tinyreflect.ValueOf(s)
 	t.Logf("Value kind: %v", v.Kind())
 	field0, err := v.Field(0)
 	if err != nil {
@@ -32,11 +31,11 @@ func TestFieldAccess(t *testing.T) {
 
 	// Test on a pointer to a struct
 	p := &s
-	pv := tr.ValueOf(p)
+	pv := tinyreflect.ValueOf(p)
 	t.Logf("Pointer value kind: %v", pv.Kind())
 
 	// Use Indirect to get the struct from the pointer
-	iv := tr.Indirect(pv)
+	iv := tinyreflect.Indirect(pv)
 	t.Logf("After Indirect - kind: %v", iv.Kind())
 
 	field0Indirect, err := iv.Field(0)

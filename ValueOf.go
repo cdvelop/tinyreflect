@@ -1,7 +1,6 @@
 package tinyreflect
 
 import (
-	"sync/atomic"
 	"unsafe"
 
 	. "github.com/cdvelop/tinystring"
@@ -31,7 +30,6 @@ const (
 // Kind is now defined in tinystring/Kind.go as an anonymous struct for clean API
 
 type Value struct {
-	tr *TinyReflect
 	// typ_ holds the type of the value represented by a Value.
 	// Access using the Typ method to avoid escape of v.
 	typ_ *Type
@@ -88,7 +86,7 @@ func (v Value) Elem() (Value, error) {
 		}
 		fl := v.flag&flagRO | flagIndir | flagAddr
 		fl |= flag(typ.Kind())
-		return Value{v.tr, typ, ptr, fl}, nil
+		return Value{typ, ptr, fl}, nil
 	}
 	return Value{}, Err(ref, D.Value, D.NotOfType, D.Pointer)
 }
@@ -101,18 +99,7 @@ func (v Value) NumField() (int, error) {
 		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, "Struct")
 	}
 
-	// Fast path: check cache
-	if v.tr != nil {
-		structID := v.typ_.StructID()
-		count := atomic.LoadInt32(&v.tr.structCount)
-		for i := int32(0); i < count; i++ {
-			if v.tr.structCache[i].structID == structID {
-				return int(v.tr.structCache[i].fieldCount), nil
-			}
-		}
-	}
-
-	// Slow path: reflect
+	// Direct reflection approach (no caching)
 	st := v.typ_.StructType()
 	if st == nil {
 		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, "Struct")
@@ -127,28 +114,7 @@ func (v Value) Field(i int) (Value, error) {
 		return Value{}, Err(ref, D.Value, D.NotOfType, "Struct")
 	}
 
-	// Fast path: check cache
-	if v.tr != nil {
-		structID := v.typ_.StructID()
-		count := atomic.LoadInt32(&v.tr.structCount)
-		for j := int32(0); j < count; j++ {
-			if v.tr.structCache[j].structID == structID {
-				cachedStruct := &v.tr.structCache[j]
-				if uint(i) >= uint(cachedStruct.fieldCount) {
-					return Value{}, Err(ref, D.Value, D.Index, D.Out, D.Of, D.Range)
-				}
-				fieldSchema := &cachedStruct.fieldSchemas[i]
-				typ := fieldSchema.typ
-				fl := v.flag&(flagStickyRO|flagIndir|flagAddr) | flag(typ.Kind())
-				// This part is tricky without full name info, so we assume public fields in cache for now.
-				// A more robust implementation might cache the IsExported flag as well.
-				ptr := add(v.ptr, uintptr(fieldSchema.offset), "same as non-reflect &v.field")
-				return Value{v.tr, typ, ptr, fl}, nil
-			}
-		}
-	}
-
-	// Slow path: reflect
+	// Direct reflection approach (no caching)
 	tt := (*StructType)(unsafe.Pointer(v.typ()))
 	if uint(i) >= uint(len(tt.Fields)) {
 		return Value{}, Err(ref, D.Value, D.Index, D.Out, D.Of, D.Range)
@@ -165,7 +131,7 @@ func (v Value) Field(i int) (Value, error) {
 		}
 	}
 	ptr := add(v.ptr, field.Off, "same as non-reflect &v.field")
-	return Value{v.tr, typ, ptr, fl}, nil
+	return Value{typ, ptr, fl}, nil
 }
 
 // Type returns v's type.

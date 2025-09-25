@@ -7,7 +7,6 @@ import (
 )
 
 func TestStructFieldTypInitialization(t *testing.T) {
-	tr := tinyreflect.New()
 	type TestStruct struct {
 		Name      string
 		Timestamp int64
@@ -16,7 +15,7 @@ func TestStructFieldTypInitialization(t *testing.T) {
 	}
 
 	s := TestStruct{}
-	typ := tr.TypeOf(s)
+	typ := tinyreflect.TypeOf(s)
 
 	if typ == nil {
 		t.Fatal("TypeOf returned nil")

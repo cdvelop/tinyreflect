@@ -35,21 +35,18 @@ func BenchmarkTinyReflect_TypeOf_First(b *testing.B) {
 	s := BenchmarkStruct{Name: "test", Age: 25}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Create new instance each time to avoid cache
-		tr2 := tinyreflect.New()
-		_ = tr2.TypeOf(s)
+		_ = tinyreflect.TypeOf(s)
 	}
 }
 
 // Benchmark tinyreflect TypeOf (cached)
 func BenchmarkTinyReflect_TypeOf_Cached(b *testing.B) {
-	tr := tinyreflect.New()
 	s := BenchmarkStruct{Name: "test", Age: 25}
 	// Warm up cache
-	_ = tr.TypeOf(s)
+	_ = tinyreflect.TypeOf(s)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = tr.TypeOf(s)
+		_ = tinyreflect.TypeOf(s)
 	}
 }
 
@@ -71,9 +68,7 @@ func BenchmarkTinyReflect_FieldAccess_First(b *testing.B) {
 	s := BenchmarkStruct{Name: "test", Age: 25, Active: true, ID: 123}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Create new instance each time to avoid cache
-		tr2 := tinyreflect.New()
-		v := tr2.ValueOf(s)
+		v := tinyreflect.ValueOf(s)
 		_, _ = v.Field(0)
 		_, _ = v.Field(1)
 		_, _ = v.Field(2)
@@ -83,15 +78,14 @@ func BenchmarkTinyReflect_FieldAccess_First(b *testing.B) {
 
 // Benchmark tinyreflect field access (cached)
 func BenchmarkTinyReflect_FieldAccess_Cached(b *testing.B) {
-	tr := tinyreflect.New()
 	s := BenchmarkStruct{Name: "test", Age: 25, Active: true, ID: 123}
 	// Warm up cache by materializing struct schema
-	_ = tr.TypeOf(s)
-	v := tr.ValueOf(s)
+	_ = tinyreflect.TypeOf(s)
+	v := tinyreflect.ValueOf(s)
 	_, _ = v.Field(0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		v := tr.ValueOf(s)
+		v := tinyreflect.ValueOf(s)
 		_, _ = v.Field(0)
 		_, _ = v.Field(1)
 		_, _ = v.Field(2)
@@ -118,9 +112,8 @@ func BenchmarkTinyReflect_FieldIteration_First(b *testing.B) {
 	s := BenchmarkStruct{Name: "test", Age: 25, Active: true, Data: []byte("data"), ID: 123, Score: 95.5}
 	b.ResetTimer()
 	// Create a fresh instance each time to keep the cache cold and measure the real first-hit cost.
-	tr := tinyreflect.New()
 	for i := 0; i < b.N; i++ {
-		v := tr.ValueOf(s)
+		v := tinyreflect.ValueOf(s)
 		typ := v.Type()
 		num, _ := typ.NumField()
 		for j := 0; j < num; j++ {
@@ -132,16 +125,15 @@ func BenchmarkTinyReflect_FieldIteration_First(b *testing.B) {
 
 // Benchmark tinyreflect field iteration (cached)
 func BenchmarkTinyReflect_FieldIteration_Cached(b *testing.B) {
-	tr := tinyreflect.New()
 	s := BenchmarkStruct{Name: "test", Age: 25, Active: true, Data: []byte("data"), ID: 123, Score: 95.5}
 	// Warm up cache
-	_ = tr.TypeOf(s)
-	v := tr.ValueOf(s)
+	_ = tinyreflect.TypeOf(s)
+	v := tinyreflect.ValueOf(s)
 	typ := v.Type()
 	_, _ = typ.NumField()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		v := tr.ValueOf(s)
+		v := tinyreflect.ValueOf(s)
 		typ := v.Type()
 		num, _ := typ.NumField()
 		for j := 0; j < num; j++ {

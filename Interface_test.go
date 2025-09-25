@@ -7,7 +7,6 @@ import (
 )
 
 func TestInterface(t *testing.T) {
-	tr := tinyreflect.New()
 
 	// Test with a zero Value (should return an error)
 	v := tinyreflect.Value{}
@@ -18,7 +17,7 @@ func TestInterface(t *testing.T) {
 
 	// Test with a valid value
 	i := 123
-	v = tr.ValueOf(i)
+	v = tinyreflect.ValueOf(i)
 	iface, err := v.Interface()
 	if err != nil {
 		t.Errorf("Interface on valid value: unexpected error: %v", err)
@@ -29,7 +28,7 @@ func TestInterface(t *testing.T) {
 
 	// Test with a nil interface value
 	var nilIface any = nil
-	v = tr.ValueOf(nilIface)
+	v = tinyreflect.ValueOf(nilIface)
 	iface, err = v.Interface()
 	if err == nil {
 		t.Error("Interface on nil interface value: expected an error")

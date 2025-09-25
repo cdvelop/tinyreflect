@@ -12,9 +12,8 @@ type Person struct {
 }
 
 func TestGetFieldName(t *testing.T) {
-	tr := tinyreflect.New()
 	p := Person{"Cesar", 30}
-	to := tr.TypeOf(p)
+	to := tinyreflect.TypeOf(p)
 
 	numField, err := to.NumField()
 	if err != nil {

@@ -9,7 +9,6 @@ import (
 // TestNewElemBehavior verifies that NewValue() creates proper pointers
 // and that Elem() correctly retrieves typed elements from those pointers.
 func TestNewElemBehavior(t *testing.T) {
-	tr := tinyreflect.New()
 	type InnerStruct struct {
 		V int
 		S string
@@ -17,13 +16,13 @@ func TestNewElemBehavior(t *testing.T) {
 
 	t.Run("NewCreatesNonNilPointer", func(t *testing.T) {
 		sample := InnerStruct{}
-		sampleType := tr.TypeOf(sample)
+		sampleType := tinyreflect.TypeOf(sample)
 
 		if sampleType == nil || sampleType.Kind().String() != "struct" {
 			t.Fatalf("TypeOf failed for struct, got kind %v", sampleType.Kind())
 		}
 
-		newPtr := tr.NewValue(sampleType)
+		newPtr := tinyreflect.NewValue(sampleType)
 		if newPtr.Type() == nil || newPtr.Kind().String() != "ptr" {
 			t.Fatalf("NewValue returned incorrect type, got kind %v", newPtr.Kind())
 		}
@@ -38,8 +37,8 @@ func TestNewElemBehavior(t *testing.T) {
 	})
 
 	t.Run("ElemReturnsTypedElement", func(t *testing.T) {
-		sampleType := tr.TypeOf(InnerStruct{})
-		newPtr := tr.NewValue(sampleType)
+		sampleType := tinyreflect.TypeOf(InnerStruct{})
+		newPtr := tinyreflect.NewValue(sampleType)
 
 		elem, err := newPtr.Elem()
 		if err != nil {
@@ -51,8 +50,8 @@ func TestNewElemBehavior(t *testing.T) {
 	})
 
 	t.Run("ElementFieldAccess", func(t *testing.T) {
-		sampleType := tr.TypeOf(InnerStruct{})
-		newPtr := tr.NewValue(sampleType)
+		sampleType := tinyreflect.TypeOf(InnerStruct{})
+		newPtr := tinyreflect.NewValue(sampleType)
 		elem, _ := newPtr.Elem()
 
 		_, err := elem.Field(0)
@@ -69,13 +68,13 @@ func TestNewElemBehavior(t *testing.T) {
 		basicTypes := []interface{}{int(0), string(""), bool(false)}
 
 		for _, sample := range basicTypes {
-			sampleType := tr.TypeOf(sample)
+			sampleType := tinyreflect.TypeOf(sample)
 			if sampleType == nil {
 				t.Errorf("TypeOf returned nil for %T", sample)
 				continue
 			}
 
-			newPtr := tr.NewValue(sampleType)
+			newPtr := tinyreflect.NewValue(sampleType)
 			if newPtr.Kind().String() != "ptr" {
 				t.Errorf("Expected pointer kind for %T, got %v", sample, newPtr.Kind())
 			}

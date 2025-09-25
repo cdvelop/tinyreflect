@@ -7,7 +7,6 @@ import (
 )
 
 func TestTypeMapKey(t *testing.T) {
-	tr := tinyreflect.New()
 	// Test how Type pointers behave as map keys
 	type TestStruct struct {
 		Name string
@@ -18,8 +17,8 @@ func TestTypeMapKey(t *testing.T) {
 	s1 := TestStruct{}
 	s2 := TestStruct{}
 
-	v1 := tr.ValueOf(s1)
-	v2 := tr.ValueOf(s2)
+	v1 := tinyreflect.ValueOf(s1)
+	v2 := tinyreflect.ValueOf(s2)
 
 	typ1 := v1.Type()
 	typ2 := v2.Type()
@@ -53,7 +52,7 @@ func TestTypeMapKey(t *testing.T) {
 	}
 
 	d1 := DifferentStruct{}
-	vd1 := tr.ValueOf(d1)
+	vd1 := tinyreflect.ValueOf(d1)
 	typd1 := vd1.Type()
 
 	_, ok = testMap[typd1]

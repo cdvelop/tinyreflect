@@ -7,9 +7,8 @@ import (
 )
 
 func TestSliceType(t *testing.T) {
-	tr := tinyreflect.New()
 	slice := []int{}
-	typ := tr.TypeOf(slice)
+	typ := tinyreflect.TypeOf(slice)
 
 	st := typ.SliceType()
 	if st == nil {
@@ -23,9 +22,8 @@ func TestSliceType(t *testing.T) {
 }
 
 func TestArrayType(t *testing.T) {
-	tr := tinyreflect.New()
 	arr := [3]int{}
-	typ := tr.TypeOf(arr)
+	typ := tinyreflect.TypeOf(arr)
 
 	at := typ.ArrayType()
 	if at == nil {

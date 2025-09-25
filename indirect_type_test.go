@@ -8,7 +8,6 @@ import (
 
 // TestIndirectTypeMethod tests that Indirect + Type operations work correctly.
 func TestIndirectTypeMethod(t *testing.T) {
-	tr := tinyreflect.New()
 
 	t.Run("rv.Type() should not return nil", func(t *testing.T) {
 		testCases := []interface{}{
@@ -21,7 +20,7 @@ func TestIndirectTypeMethod(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			rv := tr.Indirect(tr.ValueOf(tc))
+			rv := tinyreflect.Indirect(tinyreflect.ValueOf(tc))
 			typ := rv.Type()
 
 			if typ == nil {
@@ -39,7 +38,7 @@ func TestIndirectTypeMethod(t *testing.T) {
 		}{"John", 25}
 
 		// Test direct struct
-		rv := tr.Indirect(tr.ValueOf(x))
+		rv := tinyreflect.Indirect(tinyreflect.ValueOf(x))
 		typ := rv.Type()
 
 		if typ == nil {
@@ -49,7 +48,7 @@ func TestIndirectTypeMethod(t *testing.T) {
 		}
 
 		// Test pointer to struct
-		rv2 := tr.Indirect(tr.ValueOf(&x))
+		rv2 := tinyreflect.Indirect(tinyreflect.ValueOf(&x))
 		typ2 := rv2.Type()
 
 		if typ2 == nil {

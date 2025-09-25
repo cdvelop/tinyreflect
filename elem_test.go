@@ -7,12 +7,11 @@ import (
 )
 
 func TestElem(t *testing.T) {
-	tr := tinyreflect.New()
 
 	// Test basic pointer dereference
 	x := 42
 	ptr := &x
-	v := tr.ValueOf(ptr)
+	v := tinyreflect.ValueOf(ptr)
 	elem, err := v.Elem()
 	if err != nil {
 		t.Fatalf("Elem() failed: %v", err)
@@ -26,7 +25,7 @@ func TestElem(t *testing.T) {
 
 	// Test nil pointer
 	var nilPtr *int
-	vNil := tr.ValueOf(nilPtr)
+	vNil := tinyreflect.ValueOf(nilPtr)
 	elemNil, err := vNil.Elem()
 	if err != nil {
 		t.Fatalf("Elem() on nil pointer failed: %v", err)
@@ -36,7 +35,7 @@ func TestElem(t *testing.T) {
 	}
 
 	// Test error case - non-pointer
-	vInt := tr.ValueOf(42)
+	vInt := tinyreflect.ValueOf(42)
 	_, err = vInt.Elem()
 	if err == nil {
 		t.Error("Expected error when calling Elem() on non-pointer")
@@ -44,14 +43,13 @@ func TestElem(t *testing.T) {
 }
 
 func TestElemStruct(t *testing.T) {
-	tr := tinyreflect.New()
 	type TestStruct struct {
 		X int
 		Y string
 	}
 
 	s := &TestStruct{X: 10, Y: "hello"}
-	v := tr.ValueOf(s)
+	v := tinyreflect.ValueOf(s)
 	elem, err := v.Elem()
 	if err != nil {
 		t.Fatalf("Elem() failed: %v", err)

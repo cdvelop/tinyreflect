@@ -7,7 +7,6 @@ import (
 )
 
 func TestTypeMethod(t *testing.T) {
-	tr := tinyreflect.New()
 
 	t.Run("Basic types", func(t *testing.T) {
 		testCases := []struct {
@@ -23,7 +22,7 @@ func TestTypeMethod(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				v := tr.ValueOf(tc.value)
+				v := tinyreflect.ValueOf(tc.value)
 				typ := v.Type()
 				if typ == nil {
 					t.Errorf("ValueOf(%v).Type() returned nil", tc.value)
@@ -37,7 +36,7 @@ func TestTypeMethod(t *testing.T) {
 		ptr := &x
 
 		// Test direct pointer
-		v1 := tr.ValueOf(ptr)
+		v1 := tinyreflect.ValueOf(ptr)
 		typ1 := v1.Type()
 		if typ1 == nil {
 			t.Fatal("ValueOf(ptr).Type() returned nil")
@@ -47,7 +46,7 @@ func TestTypeMethod(t *testing.T) {
 		}
 
 		// Test after indirect
-		v2 := tr.Indirect(v1)
+		v2 := tinyreflect.Indirect(v1)
 		typ2 := v2.Type()
 		if typ2 == nil {
 			t.Fatal("Indirect(ValueOf(ptr)).Type() returned nil")
@@ -59,7 +58,7 @@ func TestTypeMethod(t *testing.T) {
 
 	t.Run("Nil values", func(t *testing.T) {
 		// Test nil interface
-		v1 := tr.ValueOf(nil)
+		v1 := tinyreflect.ValueOf(nil)
 		typ1 := v1.Type()
 		if typ1 != nil {
 			t.Errorf("ValueOf(nil).Type() should return nil, but got %v", typ1)
@@ -67,7 +66,7 @@ func TestTypeMethod(t *testing.T) {
 
 		// Test nil pointer
 		var ptr *int
-		v2 := tr.ValueOf(ptr)
+		v2 := tinyreflect.ValueOf(ptr)
 		typ2 := v2.Type()
 		if typ2 == nil {
 			t.Error("ValueOf(nil pointer).Type() returned nil")
@@ -76,9 +75,8 @@ func TestTypeMethod(t *testing.T) {
 }
 
 func TestTypeStability(t *testing.T) {
-	tr := tinyreflect.New()
 	x := 42
-	v := tr.ValueOf(x)
+	v := tinyreflect.ValueOf(x)
 
 	// Get type multiple times
 	typ1 := v.Type()
