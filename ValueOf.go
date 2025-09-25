@@ -61,7 +61,6 @@ type Value struct {
 	// in r's type's method table.
 }
 
-
 // Elem returns the value that the pointer v points to.
 // It panics if v's Kind is not Ptr.
 // It returns the zero Value if v is a nil pointer.
@@ -185,9 +184,8 @@ func (v Value) typ() *Type {
 	// Types are either static (for compiler-created types) or
 	// heap-allocated but always reachable (for reflection-created
 	// types, held in the central map). So there is no need to
-	// escape types. noescape here help avoid unnecessary escape
-	// of v.
-	return (*Type)(NoEscape(unsafe.Pointer(v.typ_)))
+	// escape types. Direct cast is safe here.
+	return v.typ_
 }
 
 // add returns p+x.
@@ -217,20 +215,9 @@ func (f flag) kind() Kind {
 	return Kind(f & flagKindMask)
 }
 
-// NoEscape hides the pointer p from escape analysis, preventing it
-// from escaping to the heap. It compiles down to nothing.
-//
-// WARNING: This is very subtle to use correctly. The caller must
-// ensure that it's truly safe for p to not escape to the heap by
-// maintaining runtime pointer invariants (for example, that globals
-// and the heap may not generally point into a stack).
-//
-//go:nosplit
-//go:nocheckptr
-func NoEscape(p unsafe.Pointer) unsafe.Pointer {
-	x := uintptr(p)          //nolint:govet
-	return unsafe.Pointer(x) //nolint:govet
-}
+// NoEscape function removed to avoid go vet warnings.
+// The direct pointer access in typ() method is safe since types are
+// either static or heap-allocated and always reachable.
 
 // Kind returns the specific kind of this value.
 func (v Value) Kind() Kind {
