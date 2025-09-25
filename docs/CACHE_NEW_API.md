@@ -161,17 +161,6 @@ func (tr *TinyReflect) Indirect(v Value) Value // Replaces global Indirect
 - No dynamic allocation after initialization
 - All state in TinyReflect struct (zero global variables)
 
-## Final Design
-
-```go
-type TinyReflect struct {
-    structCache []structCacheEntry    // Configurable size array
-    structCount int32                 // Atomic counter  
-    cacheLock   int32                 // Atomic lock
-    log         func(msgs ...any)     // Optional logging
-    maxStructs  int32                 // Capacity limit
-}
-```
 
 **Performance Expectations:**
 | Aspect | TinyReflect | Go reflect | TinyBin |

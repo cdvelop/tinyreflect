@@ -9,7 +9,7 @@ import (
 
 // Default cache sizes
 const (
-	StructSize128 = 128
+	StructSize128 = 128 // Default cache size
 	StructSize256 = 256
 )
 
@@ -29,32 +29,25 @@ type stringHeader struct {
 // TinyReflect provides an instance-based reflection API with an internal cache
 // optimized for TinyGo and WebAssembly environments.
 type TinyReflect struct {
-	structCache []structCacheEntry // The cache for struct schemas.
-	structCount int32              // Atomic counter for the number of cached structs.
-	cacheLock   int32              // Atomic lock for cache access.
-	log         func(msgs ...any)  // Optional logger function.
-	maxStructs  int32              // The maximum number of structs that can be cached.
+	structCache [128]structCacheEntry // Fixed array cache for struct schemas.
+	structCount int32                 // Atomic counter for the number of cached structs.
+	cacheLock   int32                 // Atomic lock for cache access.
+	log         func(msgs ...any)     // Optional logger function.
 }
 
 // New creates a new TinyReflect instance with optional configuration.
-// You can provide a cache size (e.g., StructSize256) and a logger function.
-// If no arguments are provided, it defaults to a cache size of 128 and no logging.
+// You can provide a logger function. The struct cache is fixed at 128 entries.
 func New(args ...any) *TinyReflect {
 	tr := &TinyReflect{
-		maxStructs: StructSize128,   // Default cache size
-		log:        func(...any) {}, // Default no-op logger
+		log: func(...any) {}, // Default no-op logger
 	}
 
 	for _, arg := range args {
 		switch v := arg.(type) {
-		case int:
-			tr.maxStructs = int32(v)
 		case func(...any):
 			tr.log = v
 		}
 	}
-
-	tr.structCache = make([]structCacheEntry, tr.maxStructs)
 
 	return tr
 }
@@ -235,7 +228,7 @@ func (tr *TinyReflect) cacheStructSchema(i any, typ *Type) {
 	}
 
 	count := atomic.LoadInt32(&tr.structCount)
-	if count >= tr.maxStructs {
+	if count >= int32(len(tr.structCache)) {
 		tr.log("tinyreflect: struct cache is full")
 		return
 	}
@@ -297,7 +290,7 @@ func (tr *TinyReflect) cacheStructSchema(i any, typ *Type) {
 	}
 
 	newIndex := count
-	if newIndex < tr.maxStructs {
+	if newIndex < int32(len(tr.structCache)) {
 		tr.structCache[newIndex] = entry
 		atomic.StoreInt32(&tr.structCount, count+1)
 		tr.log("tinyreflect: cached schema for struct", structName)
