@@ -41,7 +41,7 @@ type TinyReflect struct {
 // If no arguments are provided, it defaults to a cache size of 128 and no logging.
 func New(args ...any) *TinyReflect {
 	tr := &TinyReflect{
-		maxStructs: StructSize128, // Default cache size
+		maxStructs: StructSize128,   // Default cache size
 		log:        func(...any) {}, // Default no-op logger
 	}
 
@@ -68,13 +68,27 @@ func (tr *TinyReflect) TypeOf(i any) *Type {
 	e := (*EmptyInterface)(unsafe.Pointer(&i))
 	typ := e.Type
 
+	// Fast path: check if type is already cached
+	if typ.Kind() == K.Struct {
+		structID := typ.StructID()
+		if structID != 0 && tr.isStructCached(structID) {
+			return typ
+		}
+		tr.cacheStructSchema(i, typ)
+		return typ
+	}
+
+	// Handle pointer chains efficiently
 	underlying := typ
-	for underlying != nil && underlying.Kind().String() == "ptr" {
+	for underlying != nil && underlying.Kind() == K.Pointer {
 		underlying = underlying.Elem()
 	}
 
-	if underlying != nil && underlying.Kind().String() == "struct" {
-		tr.cacheStructSchema(i, underlying)
+	if underlying != nil && underlying.Kind() == K.Struct {
+		structID := underlying.StructID()
+		if structID != 0 && !tr.isStructCached(structID) {
+			tr.cacheStructSchema(i, underlying)
+		}
 	}
 
 	return typ
@@ -107,7 +121,7 @@ func (tr *TinyReflect) unpackEface(i any) Value {
 // If v is a nil pointer, Indirect returns a zero Value.
 // If v is not a pointer, Indirect returns v.
 func (tr *TinyReflect) Indirect(v Value) Value {
-	if v.kind().String() != "ptr" {
+	if v.kind() != K.Pointer {
 		return v
 	}
 	elem, err := v.Elem()
@@ -161,31 +175,40 @@ func (tr *TinyReflect) NewValue(typ *Type) Value {
 	return Value{tr, (*Type)(unsafe.Pointer(&ptrType)), unsafe.Pointer(&ptr[0]), flag(K.Pointer) | flagIndir}
 }
 
+// isStructCached checks if a struct is already cached without locking
+func (tr *TinyReflect) isStructCached(structID uint32) bool {
+	count := atomic.LoadInt32(&tr.structCount)
+	for j := int32(0); j < count; j++ {
+		if tr.structCache[j].structID == structID {
+			return true
+		}
+	}
+	return false
+}
+
 func (tr *TinyReflect) cacheStructSchema(i any, typ *Type) {
 	structID := typ.StructID()
 	if structID == 0 {
 		return // Not a struct or invalid type
 	}
 
-	count := atomic.LoadInt32(&tr.structCount)
-	for j := int32(0); j < count; j++ {
-		if tr.structCache[j].structID == structID {
-			return // Already cached
-		}
+	// Quick check without lock
+	if tr.isStructCached(structID) {
+		return
 	}
 
+	// Acquire lock for cache modification
 	for !atomic.CompareAndSwapInt32(&tr.cacheLock, 0, 1) {
 		// spin
 	}
 	defer atomic.StoreInt32(&tr.cacheLock, 0)
 
-	count = atomic.LoadInt32(&tr.structCount)
-	for j := int32(0); j < count; j++ {
-		if tr.structCache[j].structID == structID {
-			return
-		}
+	// Double check after acquiring lock
+	if tr.isStructCached(structID) {
+		return
 	}
 
+	count := atomic.LoadInt32(&tr.structCount)
 	if count >= tr.maxStructs {
 		tr.log("tinyreflect: struct cache is full")
 		return
@@ -194,18 +217,37 @@ func (tr *TinyReflect) cacheStructSchema(i any, typ *Type) {
 	var entry structCacheEntry
 	entry.structID = structID
 
-	// Use Indirect to correctly handle pointers when checking for StructNamer.
-	v := tr.Indirect(tr.ValueOf(i))
-	iface, err := v.Interface()
-	if err != nil {
-		iface = i // Fallback for safety
-	}
-
+	// Optimized struct name detection - avoid costly Interface() call
 	var structName string
-	if sn, ok := iface.(StructNamer); ok {
+	if sn, ok := i.(StructNamer); ok {
 		structName = sn.StructName()
 	} else {
-		structName = typ.Name()
+		// For pointer types, try to get the underlying value
+		if typ.Kind() == K.Pointer {
+			e := (*EmptyInterface)(unsafe.Pointer(&i))
+			if e.Data != nil {
+				// Dereference pointer and check again
+				ptrData := *(*unsafe.Pointer)(e.Data)
+				if ptrData != nil {
+					// Create temporary interface for dereferenced value
+					elemTyp := typ.Elem()
+					if elemTyp != nil {
+						var tempIface EmptyInterface
+						tempIface.Type = elemTyp
+						tempIface.Data = ptrData
+						tempValue := *(*any)(unsafe.Pointer(&tempIface))
+						if sn, ok := tempValue.(StructNamer); ok {
+							structName = sn.StructName()
+						} else {
+							structName = elemTyp.Name()
+						}
+					}
+				}
+			}
+		}
+		if structName == "" {
+			structName = typ.Name()
+		}
 	}
 	entry.nameLen = uint8(copy(entry.structName[:], structName))
 
@@ -228,9 +270,10 @@ func (tr *TinyReflect) cacheStructSchema(i any, typ *Type) {
 		entry.fieldSchemas[k].typ = field.Typ
 	}
 
-	newIndex := atomic.AddInt32(&tr.structCount, 1) - 1
+	newIndex := count
 	if newIndex < tr.maxStructs {
 		tr.structCache[newIndex] = entry
+		atomic.StoreInt32(&tr.structCount, count+1)
 		tr.log("tinyreflect: cached schema for struct", structName)
 	}
 }
