@@ -167,12 +167,38 @@ func (tr *TinyReflect) NewValue(typ *Type) Value {
 		return Value{tr: tr}
 	}
 
-	ptrType := PtrType{Type: Type{Kind_: K.Pointer, Size: unsafe.Sizeof(uintptr(0))}, Elem: typ}
-	ptrToValue := make([]byte, typ.Size)
-	ptr := make([]byte, unsafe.Sizeof(uintptr(0)))
-	*(*unsafe.Pointer)(unsafe.Pointer(&ptr[0])) = unsafe.Pointer(&ptrToValue[0])
+	// Create properly aligned memory for the target value
+	size := typ.Size
+	if size == 0 {
+		size = 1 // Ensure minimum size for zero-sized types
+	}
 
-	return Value{tr, (*Type)(unsafe.Pointer(&ptrType)), unsafe.Pointer(&ptr[0]), flag(K.Pointer) | flagIndir}
+	// Allocate aligned memory for the value
+	valuePtr := make([]byte, size+7) // Add padding for alignment
+	alignedValuePtr := unsafe.Pointer((uintptr(unsafe.Pointer(&valuePtr[0])) + 7) &^ 7)
+
+	// Allocate aligned memory for the pointer to the value
+	ptrStorage := make([]uintptr, 1) // Use uintptr slice for proper alignment
+	ptrStorage[0] = uintptr(alignedValuePtr)
+
+	// Create a proper pointer type that won't cause alignment issues
+	// We'll use typ.Elem() construction pattern to avoid creating local PtrType
+	ptrTypeSize := unsafe.Sizeof(uintptr(0))
+
+	// Create type info for pointer type - allocate it properly aligned
+	ptrTypeStorage := make([]byte, unsafe.Sizeof(PtrType{})+7)
+	alignedPtrType := (*PtrType)(unsafe.Pointer((uintptr(unsafe.Pointer(&ptrTypeStorage[0])) + 7) &^ 7))
+
+	// Initialize the pointer type properly
+	alignedPtrType.Type = Type{
+		Kind_:    K.Pointer,
+		Size:     ptrTypeSize,
+		PtrBytes: ptrTypeSize,
+		Hash:     typ.Hash ^ 0x12345678, // Simple hash derivation
+	}
+	alignedPtrType.Elem = typ
+
+	return Value{tr, (*Type)(unsafe.Pointer(alignedPtrType)), unsafe.Pointer(&ptrStorage[0]), flag(K.Pointer) | flagIndir}
 }
 
 // isStructCached checks if a struct is already cached without locking
