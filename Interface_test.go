@@ -1,25 +1,40 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
 
-	. "github.com/cdvelop/tinystring"
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestInterface(t *testing.T) {
-	// Test with a nil type
-	v := Value{}
+	tr := tinyreflect.New()
+
+	// Test with a zero Value (should return an error)
+	v := tinyreflect.Value{}
 	_, err := v.Interface()
 	if err == nil {
-		t.Error("Interface with nil type: expected an error, but got nil")
+		t.Error("Interface with zero Value: expected an error, but got nil")
 	}
 
-	// Test with an interface
-	var i interface{} = 123
-	v = ValueOf(i)
-	v.flag = flag(K.Interface) // force kind to Interface
-	_, err = v.Interface()
+	// Test with a valid value
+	i := 123
+	v = tr.ValueOf(i)
+	iface, err := v.Interface()
+	if err != nil {
+		t.Errorf("Interface on valid value: unexpected error: %v", err)
+	}
+	if val, ok := iface.(int); !ok || val != 123 {
+		t.Errorf("Interface on valid value: expected 123, got %v", iface)
+	}
+
+	// Test with a nil interface value
+	var nilIface any = nil
+	v = tr.ValueOf(nilIface)
+	iface, err = v.Interface()
 	if err == nil {
-		t.Error("Interface on interface: expected an error, but got nil")
+		t.Error("Interface on nil interface value: expected an error")
+	}
+	if iface != nil {
+		t.Errorf("Interface on nil interface value: expected nil, got %v", iface)
 	}
 }

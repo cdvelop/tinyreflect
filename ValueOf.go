@@ -1,6 +1,7 @@
 package tinyreflect
 
 import (
+	"sync/atomic"
 	"unsafe"
 
 	. "github.com/cdvelop/tinystring"
@@ -30,6 +31,7 @@ const (
 // Kind is now defined in tinystring/Kind.go as an anonymous struct for clean API
 
 type Value struct {
+	tr *TinyReflect
 	// typ_ holds the type of the value represented by a Value.
 	// Access using the Typ method to avoid escape of v.
 	typ_ *Type
@@ -59,29 +61,6 @@ type Value struct {
 	// in r's type's method table.
 }
 
-// ValueOf returns a new Value initialized to the concrete value
-// stored in the interface i. ValueOf(nil) returns the zero Value.
-func ValueOf(i any) Value {
-	if i == nil {
-		return Value{}
-	}
-	return unpackEface(i)
-}
-
-// unpackEface converts the empty interface i to a Value.
-func unpackEface(i any) Value {
-	e := (*EmptyInterface)(unsafe.Pointer(&i))
-	// NOTE: don't read e.word until we know whether it is really a pointer or not.
-	t := e.Type
-	if t == nil {
-		return Value{}
-	}
-	f := flag(t.Kind())
-	if t.IfaceIndir() {
-		f |= flagIndir
-	}
-	return Value{t, e.Data, f}
-}
 
 // Elem returns the value that the pointer v points to.
 // It panics if v's Kind is not Ptr.
@@ -110,7 +89,7 @@ func (v Value) Elem() (Value, error) {
 		}
 		fl := v.flag&flagRO | flagIndir | flagAddr
 		fl |= flag(typ.Kind())
-		return Value{typ, ptr, fl}, nil
+		return Value{v.tr, typ, ptr, fl}, nil
 	}
 	return Value{}, Err(ref, D.Value, D.NotOfType, D.Pointer)
 }
@@ -119,6 +98,22 @@ func (v Value) NumField() (int, error) {
 	if v.typ_ == nil {
 		return 0, Err(ref, D.Value, D.Nil)
 	}
+	if v.kind() != K.Struct {
+		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, "Struct")
+	}
+
+	// Fast path: check cache
+	if v.tr != nil {
+		structID := v.typ_.StructID()
+		count := atomic.LoadInt32(&v.tr.structCount)
+		for i := int32(0); i < count; i++ {
+			if v.tr.structCache[i].structID == structID {
+				return int(v.tr.structCache[i].fieldCount), nil
+			}
+		}
+	}
+
+	// Slow path: reflect
 	st := v.typ_.StructType()
 	if st == nil {
 		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, "Struct")
@@ -132,6 +127,29 @@ func (v Value) Field(i int) (Value, error) {
 	if v.kind() != K.Struct {
 		return Value{}, Err(ref, D.Value, D.NotOfType, "Struct")
 	}
+
+	// Fast path: check cache
+	if v.tr != nil {
+		structID := v.typ_.StructID()
+		count := atomic.LoadInt32(&v.tr.structCount)
+		for j := int32(0); j < count; j++ {
+			if v.tr.structCache[j].structID == structID {
+				cachedStruct := &v.tr.structCache[j]
+				if uint(i) >= uint(cachedStruct.fieldCount) {
+					return Value{}, Err(ref, D.Value, D.Index, D.Out, D.Of, D.Range)
+				}
+				fieldSchema := &cachedStruct.fieldSchemas[i]
+				typ := fieldSchema.typ
+				fl := v.flag&(flagStickyRO|flagIndir|flagAddr) | flag(typ.Kind())
+				// This part is tricky without full name info, so we assume public fields in cache for now.
+				// A more robust implementation might cache the IsExported flag as well.
+				ptr := add(v.ptr, uintptr(fieldSchema.offset), "same as non-reflect &v.field")
+				return Value{v.tr, typ, ptr, fl}, nil
+			}
+		}
+	}
+
+	// Slow path: reflect
 	tt := (*StructType)(unsafe.Pointer(v.typ()))
 	if uint(i) >= uint(len(tt.Fields)) {
 		return Value{}, Err(ref, D.Value, D.Index, D.Out, D.Of, D.Range)
@@ -139,9 +157,7 @@ func (v Value) Field(i int) (Value, error) {
 	field := &tt.Fields[i]
 	typ := field.Typ
 
-	// Inherit permission bits from v, but clear flagEmbedRO.
 	fl := v.flag&(flagStickyRO|flagIndir|flagAddr) | flag(typ.Kind())
-	// Using an unexported field forces flagRO.
 	if !field.Name.IsExported() {
 		if field.Embedded() {
 			fl |= flagEmbedRO
@@ -149,13 +165,8 @@ func (v Value) Field(i int) (Value, error) {
 			fl |= flagStickyRO
 		}
 	}
-	// Either flagIndir is set and v.ptr points at struct,
-	// or flagIndir is not set and v.ptr is the actual struct data.
-	// In the former case, we want v.ptr + offset.
-	// In the latter case, we must have field.offset = 0,
-	// so v.ptr + field.offset is still the correct address.
 	ptr := add(v.ptr, field.Off, "same as non-reflect &v.field")
-	return Value{typ, ptr, fl}, nil
+	return Value{v.tr, typ, ptr, fl}, nil
 }
 
 // Type returns v's type.

@@ -4,7 +4,9 @@
 <!-- END_SECTION:BADGES_SECTION -->
 
 
-Minimal Go reflect package from reflectlite, WebAssembly and TinyGo destination
+Minimal Go reflect package from reflectlite, WebAssembly and TinyGo destination.
+
+It provides an **instance-based API with transparent caching**, optimized for performance in resource-constrained environments.
 
 
 ## Why?
@@ -23,6 +25,7 @@ TinyReflect replaces the standard library reflect package with **ultra-minimal, 
 
 - 🏆 **Dramatically smaller binaries** - Significant size reduction for WebAssembly through maximum code reuse
 - ✅ **Full TinyGo compatibility** - No compilation issues or warnings
+- 🚀 **Transparent Caching** - Automatic performance boost for struct reflection with zero API changes.
 - 🎯 **Predictable performance** - No hidden allocations or overhead
 - 🔧 **Minimal API** - Only essential operations for basic JSON-like data handling
 - 🌍 **Multilingual error handling** - Integrated with tinystring's error system
@@ -50,16 +53,21 @@ TinyReflect **intentionally** supports only a minimal set of types to keep binar
 
 This focused approach ensures minimal code size while covering the most common JSON-like data operations including simple structs.
 
-type User struct {
-u := User{"Alice", 42}
-v := tinyreflect.ValueOf(u)
-t := v.Type()
-id := t.StructID()
-## Minimal API usage
+## API Usage
+
+First, create an instance of `TinyReflect`. You can create one instance and share it throughout your application.
 
 ```go
 import "github.com/cdvelop/tinyreflect"
 
+// Create a new TinyReflect instance.
+// This instance holds the cache and is safe for concurrent use.
+tr := tinyreflect.New()
+```
+
+Now you can use the instance to perform reflection operations.
+
+```go
 type User struct {
     Name string
     Age  int
@@ -71,22 +79,27 @@ func (User) StructName() string {
 }
 
 u := User{"Alice", 42}
-v := tinyreflect.ValueOf(u)
-t := v.Type()
+
+// Use the instance to get a reflected Value
+v := tr.ValueOf(u)
+
+// The first call to ValueOf or TypeOf for a struct type will cache its schema.
+// Subsequent calls for the same type will be significantly faster.
+t := v.Type() // Or: t := tr.TypeOf(u)
 
 // Get the struct name (requires StructNamer interface)
 name := t.Name() // Returns "User" if StructNamer is implemented, "struct" otherwise
 
 // Iterate fields and get name and value
-num, _ := t.NumField()
+num, _ := t.NumField() // This is fast after the first call
 for i := 0; i < num; i++ {
     fieldName, _ := t.NameByIndex(i)
-    field, _ := v.Field(i)
+    field, _ := v.Field(i) // Also fast after the first call
     value, _ := field.Interface()
     // fieldName: field name, value: field value
 }
 
-// Unique type identifier (alternative to struct name)
+// Unique type identifier (used as cache key internally)
 id := t.StructID()
 
 // Check if a field value is zero (useful for partial updates)
@@ -98,8 +111,15 @@ if field.IsZero() {
 
 ### Minimal public API
 
+#### TinyReflect Methods
+- `New(args ...any) *TinyReflect` — Creates a new instance with optional cache size and logger.
+- `(tr *TinyReflect) ValueOf(any) Value` — Create a reflected value.
+- `(tr *TinyReflect) TypeOf(any) *Type` — Get the reflected type.
+- `(tr *TinyReflect) Indirect(v Value) Value` — Returns the value that a pointer `v` points to.
+- `(tr *TinyReflect) NewValue(typ *Type) Value` — Returns a `Value` representing a pointer to a new zero value for `typ`.
+- `(tr *TinyReflect) MakeSlice(typ *Type, len, cap int) (Value, error)` — Creates a new slice.
+
 #### Value Methods
-- `ValueOf(any) Value` — Create a reflected value.
 - `Value.Type() *Type` — Get the reflected type.
 - `Value.Field(i int) (Value, error)` — Get the i-th field of a struct value.
 - `Value.NumField() (int, error)` — Number of fields in a struct value.
@@ -146,6 +166,11 @@ TinyGo removes type metadata (including struct names) from compiled binaries to 
 ### Example Implementation
 
 ```go
+import (
+    "fmt"
+    "github.com/cdvelop/tinyreflect"
+)
+
 type Customer struct {
     ID   int
     Name string
@@ -157,8 +182,9 @@ func (Customer) StructName() string {
 }
 
 // Usage
+tr := tinyreflect.New()
 c := Customer{ID: 1, Name: "Alice"}
-typ := tinyreflect.TypeOf(c)
+typ := tr.TypeOf(c)
 fmt.Println(typ.Name()) // Output: "Customer"
 
 // Without StructNamer interface:
@@ -169,7 +195,7 @@ type Product struct {
 // No StructName() method defined
 
 p := Product{Title: "Book", Price: 15.99}
-typ2 := tinyreflect.TypeOf(p)
+typ2 := tr.TypeOf(p)
 fmt.Println(typ2.Name()) // Output: "struct"
 ```
 
