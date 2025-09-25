@@ -1,13 +1,13 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
-	"unsafe"
 
-	. "github.com/cdvelop/tinystring"
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestStructFieldTypes(t *testing.T) {
+	tr := tinyreflect.New()
 	type TestStruct struct {
 		Name   string
 		Age    int
@@ -15,12 +15,12 @@ func TestStructFieldTypes(t *testing.T) {
 		Scores []float64
 	}
 
-	typ := TypeOf(TestStruct{})
+	typ := tr.TypeOf(TestStruct{})
 	if typ == nil {
 		t.Fatal("TypeOf returned nil")
 	}
 
-	if typ.Kind() != K.Struct {
+	if typ.Kind().String() != "struct" {
 		t.Fatalf("Expected struct kind, got %v", typ.Kind())
 	}
 
@@ -28,7 +28,6 @@ func TestStructFieldTypes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NumField failed: %v", err)
 	}
-
 	t.Logf("Struct has %d fields", numFields)
 
 	for i := 0; i < numFields; i++ {
@@ -49,6 +48,7 @@ func TestStructFieldTypes(t *testing.T) {
 }
 
 func TestEmbedded(t *testing.T) {
+	tr := tinyreflect.New()
 	type E struct {
 		e int
 	}
@@ -56,16 +56,27 @@ func TestEmbedded(t *testing.T) {
 		E
 		s int
 	}
-	s := S{}
-	v := ValueOf(s)
-	st := (*StructType)(unsafe.Pointer(v.Type()))
-	f := st.Fields[0]
-	if !f.Embedded() {
-		t.Error("Embedded for embedded field: expected true, got false")
+
+	typ := tr.TypeOf(S{})
+	if typ == nil {
+		t.Fatal("TypeOf returned nil")
 	}
 
-	f = st.Fields[1]
-	if f.Embedded() {
-		t.Error("Embedded for non-embedded field: expected false, got true")
+	// Test embedded field
+	field0, err := typ.Field(0)
+	if err != nil {
+		t.Fatalf("Field(0) failed: %v", err)
+	}
+	if !field0.Embedded() {
+		t.Error("Embedded for embedded field 'E': expected true, got false")
+	}
+
+	// Test non-embedded field
+	field1, err := typ.Field(1)
+	if err != nil {
+		t.Fatalf("Field(1) failed: %v", err)
+	}
+	if field1.Embedded() {
+		t.Error("Embedded for non-embedded field 's': expected false, got true")
 	}
 }

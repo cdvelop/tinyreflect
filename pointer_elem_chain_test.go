@@ -1,13 +1,16 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
+
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestPointerTypeElemChain(t *testing.T) {
+	tr := tinyreflect.New()
 	// Test simple pointer
 	var p *int
-	typ1 := TypeOf(p)
+	typ1 := tr.TypeOf(p)
 	t.Logf("Type of *int: %p, Kind: %v", typ1, typ1.Kind())
 
 	elem1 := typ1.Elem()
@@ -18,7 +21,7 @@ func TestPointerTypeElemChain(t *testing.T) {
 
 	// Test pointer to pointer
 	var pp **int
-	typ2 := TypeOf(pp)
+	typ2 := tr.TypeOf(pp)
 	t.Logf("Type of **int: %p, Kind: %v", typ2, typ2.Kind())
 
 	elem2 := typ2.Elem()

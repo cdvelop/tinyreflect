@@ -1,6 +1,9 @@
 package tinyreflect_test
 
 import (
+	"fmt"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/cdvelop/tinyreflect"
@@ -22,7 +25,7 @@ type UserWithoutName struct {
 	Name string
 }
 
-// PersonWithName implements StructNamer interface with different name
+// PersonWithName implements StructNamer interface with a different name
 type PersonWithName struct {
 	Age int
 }
@@ -31,131 +34,146 @@ func (PersonWithName) StructName() string {
 	return "Person"
 }
 
-func TestTypeNameForStruct(t *testing.T) {
+// A thread-safe buffer to capture log messages.
+type concurrentBuffer struct {
+	b  strings.Builder
+	mu sync.Mutex
+}
+
+func (b *concurrentBuffer) Write(p []byte) (n int, err error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.b.Write(p)
+}
+
+func (b *concurrentBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.b.String()
+}
+
+func TestStructNameCaching(t *testing.T) {
 	tests := []struct {
-		name     string
-		value    interface{}
-		expected string
-		desc     string
+		name        string
+		value       interface{}
+		expectedLog string
+		desc        string
 	}{
 		{
-			name:     "struct_with_structnamer",
-			value:    UserWithName{},
-			expected: "User",
-			desc:     "Struct implementing StructNamer should return custom name",
+			name:        "struct_with_structnamer",
+			value:       UserWithName{},
+			expectedLog: "cached schema for struct User",
+			desc:        "Struct implementing StructNamer should be cached with its custom name",
 		},
 		{
-			name:     "struct_without_structnamer",
-			value:    UserWithoutName{},
-			expected: "struct",
-			desc:     "Struct NOT implementing StructNamer should return 'struct'",
+			name:        "struct_without_structnamer",
+			value:       UserWithoutName{},
+			expectedLog: "cached schema for struct struct",
+			desc:        "Struct without StructNamer should be cached with 'struct' as name",
 		},
 		{
-			name:     "person_with_structnamer",
-			value:    PersonWithName{},
-			expected: "Person",
-			desc:     "Different struct implementing StructNamer should return its custom name",
+			name:        "person_with_structnamer",
+			value:       PersonWithName{},
+			expectedLog: "cached schema for struct Person",
+			desc:        "Different struct implementing StructNamer should return its custom name",
 		},
 		{
-			name:     "pointer_to_struct_with_structnamer",
-			value:    &UserWithName{},
-			expected: "User",
-			desc:     "Pointer to struct implementing StructNamer should return custom name via Elem()",
+			name:        "pointer_to_struct_with_structnamer",
+			value:       &UserWithName{},
+			expectedLog: "cached schema for struct User",
+			desc:        "Pointer to struct with StructNamer should also be cached correctly",
 		},
 		{
-			name:     "pointer_to_struct_without_structnamer",
-			value:    &UserWithoutName{},
-			expected: "struct",
-			desc:     "Pointer to struct NOT implementing StructNamer should return 'struct' via Elem()",
-		},
-		{
-			name:     "int_type",
-			value:    42,
-			expected: "int",
-			desc:     "Non-struct types should return kind name",
-		},
-		{
-			name:     "string_type",
-			value:    "hello",
-			expected: "string",
-			desc:     "Non-struct types should return kind name",
+			name:        "pointer_to_struct_without_structnamer",
+			value:       &UserWithoutName{},
+			expectedLog: "cached schema for struct struct",
+			desc:        "Pointer to struct without StructNamer should also be cached correctly",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var actualName string
-
-			typ := tinyreflect.TypeOf(tt.value)
-			if typ == nil {
-				t.Fatalf("TypeOf(%v) returned nil", tt.value)
+			var buf concurrentBuffer
+			logger := func(msgs ...any) {
+				fmt.Fprintln(&buf, msgs...)
 			}
 
-			// Handle pointer types
-			if typ.Kind().String() == "ptr" {
-				elem := typ.Elem()
-				if elem == nil {
-					t.Fatalf("Elem() returned nil for pointer type")
-				}
-				actualName = elem.Name()
+			tr := tinyreflect.New(logger)
+			tr.TypeOf(tt.value) // This should trigger the caching
+
+			logOutput := buf.String()
+			if !strings.Contains(logOutput, tt.expectedLog) {
+				t.Errorf("%s: expected log to contain '%s', but got '%s'", tt.desc, tt.expectedLog, logOutput)
 			} else {
-				actualName = typ.Name()
+				t.Logf("✓ %s -> Log contains '%s'", tt.name, tt.expectedLog)
 			}
+		})
+	}
+}
 
-			// Debug: check if actualName is somehow nil (shouldn't happen with string)
-			if actualName == "" {
-				t.Logf("DEBUG: actualName is empty string for test %s", tt.name)
-			}
+func TestTypeNameForNonStructs(t *testing.T) {
+	tr := tinyreflect.New()
+	tests := []struct {
+		name     string
+		value    interface{}
+		expected string
+	}{
+		{name: "int_type", value: 42, expected: "int"},
+		{name: "string_type", value: "hello", expected: "string"},
+	}
 
-			if actualName != tt.expected {
-				t.Errorf("%s: expected name '%s', got '%s'", tt.desc, tt.expected, actualName)
-			} else {
-				t.Logf("✓ %s: %s -> '%s'", tt.name, tt.desc, actualName)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			typ := tr.TypeOf(tt.value)
+			if typ.Name() != tt.expected {
+				t.Errorf("Expected name '%s', got '%s'", tt.expected, typ.Name())
 			}
 		})
 	}
 }
 
 func TestTypeMethods(t *testing.T) {
+	tr := tinyreflect.New()
+
 	// Test SliceType
 	slice := []int{}
-	typ := tinyreflect.TypeOf(slice)
+	typ := tr.TypeOf(slice)
 	if typ.SliceType() == nil {
 		t.Error("SliceType: expected non-nil")
 	}
 
 	// Test ArrayType
 	arr := [3]int{}
-	typ = tinyreflect.TypeOf(arr)
+	typ = tr.TypeOf(arr)
 	if typ.ArrayType() == nil {
 		t.Error("ArrayType: expected non-nil")
 	}
 
 	// Test PtrType
 	var p *int
-	typ = tinyreflect.TypeOf(p)
+	typ = tr.TypeOf(p)
 	if typ.PtrType() == nil {
 		t.Error("PtrType: expected non-nil")
 	}
 
 	// Test StructID
 	s := UserWithName{}
-	typ = tinyreflect.TypeOf(s)
+	typ = tr.TypeOf(s)
 	if typ.StructID() == 0 {
 		t.Error("StructID: expected non-zero")
 	}
 	i := 123
-	typ = tinyreflect.TypeOf(i)
+	typ = tr.TypeOf(i)
 	if typ.StructID() != 0 {
 		t.Error("StructID on non-struct: expected 0")
 	}
 
 	// Test StructType
-	typ = tinyreflect.TypeOf(s)
+	typ = tr.TypeOf(s)
 	if typ.StructType() == nil {
 		t.Error("StructType: expected non-nil")
 	}
-	typ = tinyreflect.TypeOf(i)
+	typ = tr.TypeOf(i)
 	if typ.StructType() != nil {
 		t.Error("StructType on non-struct: expected nil")
 	}
@@ -194,7 +212,7 @@ func TestTypeMethods(t *testing.T) {
 	}
 
 	// Test Field with out of range index
-	typ = tinyreflect.TypeOf(s)
+	typ = tr.TypeOf(s)
 	_, err = typ.Field(2)
 	if err == nil {
 		t.Error("Field with out of range index: expected an error")

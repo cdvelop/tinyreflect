@@ -1,10 +1,13 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
+
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestTypeMapKey(t *testing.T) {
+	tr := tinyreflect.New()
 	// Test how Type pointers behave as map keys
 	type TestStruct struct {
 		Name string
@@ -15,8 +18,8 @@ func TestTypeMapKey(t *testing.T) {
 	s1 := TestStruct{}
 	s2 := TestStruct{}
 
-	v1 := ValueOf(s1)
-	v2 := ValueOf(s2)
+	v1 := tr.ValueOf(s1)
+	v2 := tr.ValueOf(s2)
 
 	typ1 := v1.Type()
 	typ2 := v2.Type()
@@ -25,22 +28,22 @@ func TestTypeMapKey(t *testing.T) {
 	t.Logf("Type2: %p", typ2)
 
 	// Test if they're the same pointer
-	if typ1 == typ2 {
-		t.Log("✅ Same type instances have same pointer - map key will work")
-	} else {
+	if typ1 != typ2 {
 		t.Error("❌ Same type instances have different pointers - map key will fail!")
+	} else {
+		t.Log("✅ Same type instances have same pointer - map key will work")
 	}
 
 	// Test with map
-	testMap := make(map[*Type]string)
+	testMap := make(map[*tinyreflect.Type]string)
 	testMap[typ1] = "first"
 
 	// Try to retrieve with typ2
 	value, ok := testMap[typ2]
-	if ok {
-		t.Logf("✅ Map lookup succeeded: %s", value)
-	} else {
+	if !ok {
 		t.Error("❌ Map lookup failed - different pointer addresses")
+	} else {
+		t.Logf("✅ Map lookup succeeded: %s", value)
 	}
 
 	// Test with different structs
@@ -50,13 +53,13 @@ func TestTypeMapKey(t *testing.T) {
 	}
 
 	d1 := DifferentStruct{}
-	vd1 := ValueOf(d1)
+	vd1 := tr.ValueOf(d1)
 	typd1 := vd1.Type()
 
 	_, ok = testMap[typd1]
-	if !ok {
-		t.Log("✅ Different struct type correctly not found in map")
-	} else {
+	if ok {
 		t.Error("❌ Different struct type incorrectly found in map")
+	} else {
+		t.Log("✅ Different struct type correctly not found in map")
 	}
 }

@@ -12,8 +12,9 @@ type Person struct {
 }
 
 func TestGetFieldName(t *testing.T) {
+	tr := tinyreflect.New()
 	p := Person{"Cesar", 30}
-	to := tinyreflect.TypeOf(p)
+	to := tr.TypeOf(p)
 
 	numField, err := to.NumField()
 	if err != nil {
@@ -61,6 +62,5 @@ func TestGetFieldName(t *testing.T) {
 		if label != expectedFields[i].Label {
 			t.Errorf("Field %d: expected Label %s, got %s", i, expectedFields[i].Label, label)
 		}
-
 	}
 }

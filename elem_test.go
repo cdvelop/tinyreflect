@@ -1,46 +1,42 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
 
-	. "github.com/cdvelop/tinystring"
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestElem(t *testing.T) {
+	tr := tinyreflect.New()
+
 	// Test basic pointer dereference
 	x := 42
 	ptr := &x
-
-	v := ValueOf(ptr)
+	v := tr.ValueOf(ptr)
 	elem, err := v.Elem()
 	if err != nil {
 		t.Fatalf("Elem() failed: %v", err)
 	}
-
-	// Check that the element has the correct type
 	if elem.Type() == nil {
 		t.Fatal("Elem() returned nil type")
 	}
-
-	if elem.Type().Kind() != K.Int {
-		t.Errorf("Expected Kind %v, got %v", K.Int, elem.Type().Kind())
+	if elem.Kind().String() != "int" {
+		t.Errorf("Expected Kind 'int', got '%s'", elem.Kind())
 	}
 
 	// Test nil pointer
 	var nilPtr *int
-	vNil := ValueOf(nilPtr)
+	vNil := tr.ValueOf(nilPtr)
 	elemNil, err := vNil.Elem()
 	if err != nil {
 		t.Fatalf("Elem() on nil pointer failed: %v", err)
 	}
-
-	// Should return zero value for nil pointer
-	if elemNil.Type() != nil {
-		t.Error("Expected nil type for nil pointer elem")
+	if !elemNil.IsZero() {
+		t.Error("Expected zero value for nil pointer elem")
 	}
 
 	// Test error case - non-pointer
-	vInt := ValueOf(42)
+	vInt := tr.ValueOf(42)
 	_, err = vInt.Elem()
 	if err == nil {
 		t.Error("Expected error when calling Elem() on non-pointer")
@@ -48,29 +44,27 @@ func TestElem(t *testing.T) {
 }
 
 func TestElemStruct(t *testing.T) {
-	// Test with struct pointer
+	tr := tinyreflect.New()
 	type TestStruct struct {
 		X int
 		Y string
 	}
 
 	s := &TestStruct{X: 10, Y: "hello"}
-	v := ValueOf(s)
+	v := tr.ValueOf(s)
 	elem, err := v.Elem()
 	if err != nil {
 		t.Fatalf("Elem() failed: %v", err)
 	}
 
-	if elem.Type().Kind() != K.Struct {
-		t.Errorf("Expected Kind %v, got %v", K.Struct, elem.Type().Kind())
+	if elem.Kind().String() != "struct" {
+		t.Errorf("Expected Kind 'struct', got '%s'", elem.Kind())
 	}
 
-	// Test accessing fields
 	numFields, err := elem.NumField()
 	if err != nil {
 		t.Fatalf("NumField() failed: %v", err)
 	}
-
 	if numFields != 2 {
 		t.Errorf("Expected 2 fields, got %d", numFields)
 	}

@@ -1,15 +1,18 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
+
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestPtrTypeMethod(t *testing.T) {
+	tr := tinyreflect.New()
 	// Test with a pointer type
 	x := 42
 	ptr := &x
 
-	v := ValueOf(ptr)
+	v := tr.ValueOf(ptr)
 	typ := v.Type()
 
 	if typ == nil {
@@ -37,7 +40,7 @@ func TestPtrTypeMethod(t *testing.T) {
 	}
 
 	s := &simpleStruct{}
-	v2 := ValueOf(s)
+	v2 := tr.ValueOf(s)
 	typ2 := v2.Type()
 
 	if typ2 == nil {

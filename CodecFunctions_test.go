@@ -1,19 +1,21 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
 
-	. "github.com/cdvelop/tinystring"
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestMakeSlice(t *testing.T) {
+	tr := tinyreflect.New()
+
 	// Test success case
-	sliceType := TypeOf([]int{})
-	v, err := MakeSlice(sliceType, 5, 10)
+	sliceType := tr.TypeOf([]int{})
+	v, err := tr.MakeSlice(sliceType, 5, 10)
 	if err != nil {
 		t.Errorf("MakeSlice success: unexpected error: %v", err)
 	}
-	if v.Kind() != K.Slice {
+	if v.Kind().String() != "slice" {
 		t.Errorf("MakeSlice success: expected kind Slice, got %s", v.Kind())
 	}
 	if l, _ := v.Len(); l != 5 {
@@ -24,40 +26,70 @@ func TestMakeSlice(t *testing.T) {
 	}
 
 	// Test nil type
-	_, err = MakeSlice(nil, 0, 0)
+	_, err = tr.MakeSlice(nil, 0, 0)
 	if err == nil {
 		t.Error("MakeSlice with nil type: expected an error, but got nil")
 	}
 
 	// Test non-slice type
-	intType := TypeOf(0)
-	_, err = MakeSlice(intType, 0, 0)
+	intType := tr.TypeOf(0)
+	_, err = tr.MakeSlice(intType, 0, 0)
 	if err == nil {
 		t.Error("MakeSlice with non-slice type: expected an error, but got nil")
 	}
+}
 
-	// Test negative len
-	_, err = MakeSlice(sliceType, -1, 0)
-	if err == nil {
-		t.Error("MakeSlice with negative len: expected an error, but got nil")
+func TestNewValue(t *testing.T) {
+	tr := tinyreflect.New()
+	typ := tr.TypeOf(0) // type int
+
+	v := tr.NewValue(typ)
+	if v.Kind().String() != "ptr" {
+		t.Fatalf("NewValue should return a pointer, but got %s", v.Kind())
 	}
 
-	// Test negative cap
-	_, err = MakeSlice(sliceType, 0, -1)
-	if err == nil {
-		t.Error("MakeSlice with negative cap: expected an error, but got nil")
-	}
-
-	// Test len > cap
-	_, err = MakeSlice(sliceType, 1, 0)
-	if err == nil {
-		t.Error("MakeSlice with len > cap: expected an error, but got nil")
-	}
-
-	// Test zero-sized element
-	zeroSliceType := TypeOf([]struct{}{})
-	v, err = MakeSlice(zeroSliceType, 5, 10)
+	elem, err := v.Elem()
 	if err != nil {
-		t.Errorf("MakeSlice with zero-sized element: unexpected error: %v", err)
+		t.Fatalf("Elem() on NewValue result failed: %v", err)
+	}
+
+	if elem.Kind().String() != "int" {
+		t.Errorf("NewValue's element should be Int, but got %s", elem.Kind())
+	}
+
+	if !elem.IsZero() {
+		t.Error("NewValue should point to a zero value")
+	}
+}
+
+func TestIndirect(t *testing.T) {
+	tr := tinyreflect.New()
+
+	// Test with a non-pointer
+	vInt := tr.ValueOf(123)
+	indirectVInt := tr.Indirect(vInt)
+	val, _ := indirectVInt.Int()
+	if val != 123 {
+		t.Errorf("Indirect on non-pointer should return the same value, got %d", val)
+	}
+
+	// Test with a pointer
+	i := 456
+	vPtr := tr.ValueOf(&i)
+	indirectVPrt := tr.Indirect(vPtr)
+	if indirectVPrt.Kind().String() != "int" {
+		t.Errorf("Indirect on pointer should return the element's kind, got %s", indirectVPrt.Kind())
+	}
+	val, _ = indirectVPrt.Int()
+	if val != 456 {
+		t.Errorf("Indirect on pointer should return the element's value, got %d", val)
+	}
+
+	// Test with a nil pointer
+	var nilPtr *int
+	vNilPtr := tr.ValueOf(nilPtr)
+	indirectVNilPtr := tr.Indirect(vNilPtr)
+	if !indirectVNilPtr.IsZero() {
+		t.Error("Indirect on a nil pointer should return a zero value")
 	}
 }

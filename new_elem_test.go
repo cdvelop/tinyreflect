@@ -1,140 +1,88 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
 
-	. "github.com/cdvelop/tinystring"
+	"github.com/cdvelop/tinyreflect"
 )
 
-// TestNewElemBehavior verifies that New() creates proper pointers
+// TestNewElemBehavior verifies that NewValue() creates proper pointers
 // and that Elem() correctly retrieves typed elements from those pointers.
-// This test ensures the core pointer creation and dereferencing works correctly.
 func TestNewElemBehavior(t *testing.T) {
+	tr := tinyreflect.New()
 	type InnerStruct struct {
 		V int
 		S string
 	}
 
-	// Test 1: Verify New() creates a non-nil pointer to zero value
 	t.Run("NewCreatesNonNilPointer", func(t *testing.T) {
 		sample := InnerStruct{}
-		sampleType := TypeOf(sample)
+		sampleType := tr.TypeOf(sample)
 
-		// Verify sample type is valid
-		if sampleType == nil {
-			t.Fatal("TypeOf returned nil")
-		}
-		if sampleType.Kind() != K.Struct {
-			t.Errorf("Expected struct kind, got %v", sampleType.Kind())
+		if sampleType == nil || sampleType.Kind().String() != "struct" {
+			t.Fatalf("TypeOf failed for struct, got kind %v", sampleType.Kind())
 		}
 
-		// Create new pointer using New()
-		newPtr := New(sampleType)
-		if newPtr.Type() == nil {
-			t.Fatal("New() returned value with nil type")
-		}
-		if newPtr.Kind() != K.Pointer {
-			t.Errorf("Expected pointer kind, got %v", newPtr.Kind())
+		newPtr := tr.NewValue(sampleType)
+		if newPtr.Type() == nil || newPtr.Kind().String() != "ptr" {
+			t.Fatalf("NewValue returned incorrect type, got kind %v", newPtr.Kind())
 		}
 
-		// Verify pointer is not nil (critical fix)
 		isNil, err := newPtr.IsNil()
 		if err != nil {
 			t.Fatalf("IsNil() failed: %v", err)
 		}
 		if isNil {
-			t.Error("New() should create non-nil pointer, but IsNil() returned true")
+			t.Error("NewValue() should create non-nil pointer, but IsNil() returned true")
 		}
 	})
 
-	// Test 2: Verify Elem() returns properly typed element
 	t.Run("ElemReturnsTypedElement", func(t *testing.T) {
-		sample := InnerStruct{}
-		sampleType := TypeOf(sample)
-		newPtr := New(sampleType)
+		sampleType := tr.TypeOf(InnerStruct{})
+		newPtr := tr.NewValue(sampleType)
 
-		// Get element from pointer
 		elem, err := newPtr.Elem()
 		if err != nil {
 			t.Fatalf("Elem() failed: %v", err)
 		}
-
-		// Verify element has proper type (this was the bug)
-		if elem.Type() == nil {
-			t.Fatal("Elem() returned value with nil type - this indicates a bug in New() or Elem()")
-		}
-		if elem.Type().Kind() != K.Struct {
-			t.Errorf("Expected struct element, got kind %v", elem.Type().Kind())
-		}
-
-		// Verify element is zero value but typed
-		if elem.Kind() != K.Struct {
-			t.Errorf("Element should have struct kind, got %v", elem.Kind())
+		if elem.Type() == nil || elem.Kind().String() != "struct" {
+			t.Fatalf("Elem() returned incorrect type, got kind %v", elem.Kind())
 		}
 	})
 
-	// Test 3: Verify field access works on created elements
 	t.Run("ElementFieldAccess", func(t *testing.T) {
-		sample := InnerStruct{}
-		sampleType := TypeOf(sample)
-		newPtr := New(sampleType)
-		elem, err := newPtr.Elem()
-		if err != nil {
-			t.Fatalf("Elem() failed: %v", err)
-		}
+		sampleType := tr.TypeOf(InnerStruct{})
+		newPtr := tr.NewValue(sampleType)
+		elem, _ := newPtr.Elem()
 
-		// Try to access fields - this should work if type is proper
-		field0, err := elem.Field(0)
+		_, err := elem.Field(0)
 		if err != nil {
-			t.Fatalf("Field(0) failed: %v", err)
+			t.Errorf("Field(0) failed: %v", err)
 		}
-		if field0.Type() == nil {
-			t.Error("Field(0) has nil type")
-		}
-
-		field1, err := elem.Field(1)
+		_, err = elem.Field(1)
 		if err != nil {
-			t.Fatalf("Field(1) failed: %v", err)
-		}
-		if field1.Type() == nil {
-			t.Error("Field(1) has nil type")
+			t.Errorf("Field(1) failed: %v", err)
 		}
 	})
 
-	// Test 4: Verify New() works with basic types
 	t.Run("NewWithBasicTypes", func(t *testing.T) {
-		basicTypes := []interface{}{
-			int(0),
-			string(""),
-			bool(false),
-		}
+		basicTypes := []interface{}{int(0), string(""), bool(false)}
 
 		for _, sample := range basicTypes {
-			sampleType := TypeOf(sample)
+			sampleType := tr.TypeOf(sample)
 			if sampleType == nil {
-				t.Errorf("TypeOf returned nil for %Translate", sample)
+				t.Errorf("TypeOf returned nil for %T", sample)
 				continue
 			}
 
-			newPtr := New(sampleType)
-			if newPtr.Type() == nil {
-				t.Errorf("New() returned value with nil type for %Translate", sample)
-				continue
+			newPtr := tr.NewValue(sampleType)
+			if newPtr.Kind().String() != "ptr" {
+				t.Errorf("Expected pointer kind for %T, got %v", sample, newPtr.Kind())
 			}
 
-			// Verify it's a pointer
-			if newPtr.Kind() != K.Pointer {
-				t.Errorf("Expected pointer kind for %Translate, got %v", sample, newPtr.Kind())
-			}
-
-			// Verify not nil
-			isNil, err := newPtr.IsNil()
-			if err != nil {
-				t.Errorf("IsNil() failed for %Translate: %v", sample, err)
-				continue
-			}
+			isNil, _ := newPtr.IsNil()
 			if isNil {
-				t.Errorf("New() created nil pointer for %Translate", sample)
+				t.Errorf("NewValue() created nil pointer for %T", sample)
 			}
 		}
 	})

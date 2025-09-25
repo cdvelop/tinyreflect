@@ -1,40 +1,43 @@
-package tinyreflect
+package tinyreflect_test
 
 import (
 	"testing"
-	"unsafe"
 
-	. "github.com/cdvelop/tinystring"
+	"github.com/cdvelop/tinyreflect"
 )
 
 func TestSliceType(t *testing.T) {
-	// Test with a slice of ints
+	tr := tinyreflect.New()
 	slice := []int{}
-	v := ValueOf(slice)
-	st := (*SliceType)(unsafe.Pointer(v.Type()))
+	typ := tr.TypeOf(slice)
 
-	// Test Element
-	elem := st.Element()
-	if elem.Kind() != K.Int {
-		t.Errorf("Element: expected kind Int, got %s", elem.Kind())
+	st := typ.SliceType()
+	if st == nil {
+		t.Fatal("SliceType() returned nil for a slice type")
 	}
 
+	elem := st.Element()
+	if elem.Kind().String() != "int" {
+		t.Errorf("Element: expected kind 'int', got '%s'", elem.Kind())
+	}
 }
 
 func TestArrayType(t *testing.T) {
-	// Test with an array of ints
+	tr := tinyreflect.New()
 	arr := [3]int{}
-	v := ValueOf(arr)
-	at := (*ArrayType)(unsafe.Pointer(v.Type()))
+	typ := tr.TypeOf(arr)
 
-	// Test Element
-	elem := at.Element()
-	if elem.Kind() != K.Int {
-		t.Errorf("Element: expected kind Int, got %s", elem.Kind())
+	at := typ.ArrayType()
+	if at == nil {
+		t.Fatal("ArrayType() returned nil for an array type")
 	}
 
-	// Test Length
-	if at.Length() != 3 {
-		t.Errorf("Length: expected 3, got %d", at.Length())
+	elem := at.Element()
+	if elem.Kind().String() != "int" {
+		t.Errorf("Element: expected kind 'int', got '%s'", elem.Kind())
+	}
+
+	if at.Len != 3 {
+		t.Errorf("Len: expected 3, got %d", at.Len)
 	}
 }
