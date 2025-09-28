@@ -9,8 +9,14 @@ import (
 // TestIsZero tests the IsZero method for all supported types.
 func TestIsZero(t *testing.T) {
 
-	type SimpleStruct struct{ A int; B string }
-	type NestedStruct struct{ S SimpleStruct; C bool }
+	type SimpleStruct struct {
+		A int
+		B string
+	}
+	type NestedStruct struct {
+		S SimpleStruct
+		C bool
+	}
 
 	tests := []struct {
 		name     string
@@ -49,8 +55,8 @@ func TestIsZero(t *testing.T) {
 
 		// Interface types
 		{"nil interface", nil, true},
-		{"interface with zero int", (interface{})(0), true},
-		{"interface with non-zero int", (interface{})(42), false},
+		{"interface with zero int", (any)(0), true},
+		{"interface with non-zero int", (any)(42), false},
 	}
 
 	for _, tt := range tests {

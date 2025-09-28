@@ -10,7 +10,7 @@ import (
 func TestIndirectTypeMethod(t *testing.T) {
 
 	t.Run("rv.Type() should not return nil", func(t *testing.T) {
-		testCases := []interface{}{
+		testCases := []any{
 			42,
 			"hello",
 			true,

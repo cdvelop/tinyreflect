@@ -355,12 +355,12 @@ func (v Value) IsZero() bool {
 	}
 }
 
-// InterfaceZeroAlloc sets v's current value to the target pointer without interface{} boxing.
-// This method eliminates interface{} boxing allocations for primitive types by directly
-// manipulating the interface{} structure to avoid the boxing that occurs when returning any.
+// InterfaceZeroAlloc sets v's current value to the target pointer without any boxing.
+// This method eliminates any boxing allocations for primitive types by directly
+// manipulating the any structure to avoid the boxing that occurs when returning any.
 //
 // For primitive types (int, string, bool, float64, etc.), it assigns the actual value directly
-// to the interface{} structure without creating boxing overhead.
+// to the any structure without creating boxing overhead.
 //
 // For complex types (slices, maps, structs, etc.), it falls back to the standard Interface()
 // method which does create boxing, but this is unavoidable for complex types.

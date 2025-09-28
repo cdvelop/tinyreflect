@@ -35,7 +35,7 @@ func Test_StructIteration(t *testing.T) {
 	}
 
 	// Map to verify expected results
-	expectedFields := map[string]interface{}{
+	expectedFields := map[string]any{
 		"Name":     "Test Name",
 		"Age":      30,
 		"Active":   true,
@@ -76,7 +76,7 @@ func Test_StructIteration(t *testing.T) {
 			continue
 		}
 
-		// Convert integer types for comparison to avoid type mismatches with interface{}
+		// Convert integer types for comparison to avoid type mismatches with any
 		switch v := value.(type) {
 		case int:
 			if exp, ok := expectedValue.(int); !ok || v != exp {

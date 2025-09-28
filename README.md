@@ -45,7 +45,7 @@ TinyReflect **intentionally** supports only a minimal set of types to keep binar
 - **Pointers**: Only to supported types above
 
 **❌ Unsupported Types:**
-- `interface{}`, `chan`, `func`
+- `any`, `chan`, `func`
 - `complex64`, `complex128`
 - `uintptr`, `unsafe.Pointer` (used internally only)
 - Arrays (different from slices)

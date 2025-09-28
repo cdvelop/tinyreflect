@@ -29,7 +29,7 @@ func TestUniqueStructIdentification(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		value        interface{}
+		value        any
 		expectedKind string
 	}{
 		{

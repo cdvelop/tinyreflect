@@ -65,7 +65,7 @@ func TestNewElemBehavior(t *testing.T) {
 	})
 
 	t.Run("NewWithBasicTypes", func(t *testing.T) {
-		basicTypes := []interface{}{int(0), string(""), bool(false)}
+		basicTypes := []any{int(0), string(""), bool(false)}
 
 		for _, sample := range basicTypes {
 			sampleType := tinyreflect.TypeOf(sample)

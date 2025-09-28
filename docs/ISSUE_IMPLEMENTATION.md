@@ -147,7 +147,7 @@ Key terms available in `D` struct:
 - Pointers: to supported types only
 
 **❌ Explicitly Unsupported:**
-- `interface{}`, `chan`, `func`
+- `any`, `chan`, `func`
 - `complex64`, `complex128`  
 - `uintptr`, `unsafe.Pointer` (internal use only)
 - Arrays (different from slices)
@@ -190,7 +190,7 @@ Key terms available in `D` struct:
 ### Final API Surface
 ```go
 // Core functions
-func TypeOf(i interface{}) *Type
+func TypeOf(i any) *Type
 
 // Type methods  
 func (t *Type) Name() string      // Returns "struct" for struct types

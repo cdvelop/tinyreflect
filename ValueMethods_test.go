@@ -9,7 +9,7 @@ import (
 func TestLenAndCap(t *testing.T) {
 	testCases := []struct {
 		name       string
-		value      interface{}
+		value      any
 		len        int
 		cap        int
 		lenWantErr bool
@@ -73,7 +73,7 @@ func TestIsNil(t *testing.T) {
 
 	testCases := []struct {
 		name    string
-		value   interface{}
+		value   any
 		isNil   bool
 		wantErr bool
 	}{
@@ -82,7 +82,7 @@ func TestIsNil(t *testing.T) {
 		{"Nil Pointer", nilPtr, true, false},
 		{"Non-nil Pointer", nonNilPtr, false, false},
 		{"Int", 123, false, true},
-		{"Nil Interface", (interface{})(nil), true, true}, // IsNil is not for interface value itself
+		{"Nil Interface", (any)(nil), true, true}, // IsNil is not for interface value itself
 	}
 
 	for _, tc := range testCases {

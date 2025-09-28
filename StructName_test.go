@@ -15,7 +15,7 @@ func TestTypeName(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		value        interface{}
+		value        any
 		expectedName string
 	}{
 		{"Anonymous Struct", anon, "struct"},

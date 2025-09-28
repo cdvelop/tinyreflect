@@ -79,7 +79,7 @@ func TestKindAndCanAddr(t *testing.T) {
 func TestAllGetters(t *testing.T) {
 	testCases := []struct {
 		name     string
-		value    interface{}
+		value    any
 		kind     string
 		intVal   int64
 		uintVal  uint64

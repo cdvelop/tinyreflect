@@ -25,7 +25,7 @@ const (
 // Dictionary reference for reflection errors - "reflect" cannot be translated
 const ref = "reflect"
 
-// EmptyInterface describes the layout of a "interface{}" or a "any."
+// EmptyInterface describes the layout of a "any" or a "any."
 type EmptyInterface struct {
 	Type *Type
 	Data unsafe.Pointer

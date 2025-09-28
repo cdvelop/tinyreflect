@@ -34,7 +34,7 @@ func (PersonWithName) StructName() string {
 func TestTypeOfBasicFunctionality(t *testing.T) {
 	tests := []struct {
 		name  string
-		value interface{}
+		value any
 		desc  string
 	}{
 		{
@@ -92,7 +92,7 @@ func TestTypeOfBasicFunctionality(t *testing.T) {
 func TestTypeNameForNonStructs(t *testing.T) {
 	tests := []struct {
 		name     string
-		value    interface{}
+		value    any
 		expected string
 	}{
 		{name: "int_type", value: 42, expected: "int"},

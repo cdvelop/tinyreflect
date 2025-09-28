@@ -11,7 +11,7 @@ func TestTypeMethod(t *testing.T) {
 	t.Run("Basic types", func(t *testing.T) {
 		testCases := []struct {
 			name  string
-			value interface{}
+			value any
 		}{
 			{"int", 42},
 			{"string", "hello"},

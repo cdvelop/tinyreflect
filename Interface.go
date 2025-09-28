@@ -6,10 +6,10 @@ import (
 	. "github.com/cdvelop/tinystring"
 )
 
-// Interface returns v's current value as an interface{}.
+// Interface returns v's current value as an any.
 // It is equivalent to:
 //
-//	var i interface{} = (v's underlying value)
+//	var i any = (v's underlying value)
 //
 // For a Value created from a nil interface value, Interface returns nil.
 func (v Value) Interface() (i any, err error) {
