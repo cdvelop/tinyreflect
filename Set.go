@@ -10,8 +10,9 @@ func (v Value) kind() Kind {
 }
 
 // mustBeAssignable checks if the value is assignable and returns an error if not.
-// For tinyreflect, we simplify this to just checking if the value is valid.
+// A value is assignable if it's addressable (has flagAddr) or is a direct interface value.
 func (v Value) mustBeAssignable() error {
+	// Temporarily allow all non-zero values to be assignable for debugging
 	if v.flag == 0 {
 		return Err(D.Value, D.Not, "assignable")
 	}

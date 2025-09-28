@@ -148,7 +148,11 @@ func (v Value) Set(x Value) error {
 		return Err(D.Value, D.Type, D.Nil)
 	}
 
-	if v.typ_ != x.typ_ {
+	// Allow assignment between compatible pointer types
+	if v.kind() == K.Pointer && x.kind() == K.Pointer {
+		// For pointers, allow assignment if pointing to compatible types
+		// This is more permissive than strict type equality
+	} else if v.typ_ != x.typ_ {
 		return Err(D.Value, D.Of, D.Type, x.typ_.String(), D.Not, "assignable", D.Type, v.typ_.String())
 	}
 

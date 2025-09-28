@@ -133,5 +133,8 @@ func NewValue(typ *Type) Value {
 	}
 	alignedPtrType.Elem = typ
 
-	return Value{(*Type)(unsafe.Pointer(alignedPtrType)), unsafe.Pointer(&ptrStorage[0]), flag(K.Pointer) | flagIndir}
+	// Create the Value with proper flags for addressability
+	// The pointer should be flagIndir, and the pointed-to value should have flagAddr
+	ptrFlags := flag(K.Pointer) | flagIndir
+	return Value{(*Type)(unsafe.Pointer(alignedPtrType)), unsafe.Pointer(&ptrStorage[0]), ptrFlags}
 }
