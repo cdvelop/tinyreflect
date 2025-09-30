@@ -170,13 +170,13 @@ type Customer struct {
 
 // Required for name resolution in TinyGo
 func (Customer) StructName() string {
-    return "Customer"
+    return "customer"
 }
 
 // Usage
 c := Customer{ID: 1, Name: "Alice"}
 typ := tinyreflect.TypeOf(c)
-fmt.Println(typ.Name()) // Output: "Customer"
+fmt.Println(typ.Name()) // Output: "customer"
 
 // Without StructNamer interface:
 type Product struct {
