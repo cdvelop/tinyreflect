@@ -1,0 +1,9 @@
+*.wasm
+#ISSUE*.md
+*.exe
+*.test.exe
+*.prof
+example/pwa/theme
+example/pwa/main.server
+example/*.log
+.vscode
