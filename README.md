@@ -24,7 +24,7 @@ Every Go project needs reflection capabilities for JSON operations, struct field
 TinyReflect replaces the standard library reflect package with **ultra-minimal, focused implementations** that deliver:
 
 - 🏆 **Dramatically smaller binaries** - Significant size reduction for WebAssembly through maximum code reuse
-- ✅ **Full TinyGo compatibility** - No compilation issues or warnings
+- ✅ **Full TinyGo compatibility** - 100% compatible, no compilation issues or warnings ([see details](docs/TINYGO_COMPATIBILITY.md))
 - 🎯 **Predictable performance** - No hidden allocations or overhead
 - 🔧 **Minimal API** - Only essential operations for basic JSON-like data handling
 - 🌍 **Multilingual error handling** - Integrated with tinystring's error system

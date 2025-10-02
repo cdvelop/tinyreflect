@@ -10,50 +10,13 @@ import (
 	. "github.com/cdvelop/tinystring"
 )
 
-// NestedTestStruct is a simple nested struct for testing.
-type NestedTestStruct struct {
-	NestedString string
-	NestedInt    int
-}
-
 // TestStruct is a helper struct for testing reflection operations.
 type TestStruct struct {
-	StringField            string
-	BoolField              bool
-	IntField               int
-	Int8Field              int8
-	Int16Field             int16
-	Int32Field             int32
-	Int64Field             int64
-	UintField              uint
-	Uint8Field             uint8
-	Uint16Field            uint16
-	Uint32Field            uint32
-	Uint64Field            uint64
-	Float32Field           float32
-	Float64Field           float64
-	StringSliceField       []string
-	BoolSliceField         []bool
-	ByteSliceField         []byte
-	IntSliceField          []int
-	Int8SliceField         []int8
-	Int16SliceField        []int16
-	Int32SliceField        []int32
-	Int64SliceField        []int64
-	UintSliceField         []uint
-	Uint8SliceField        []uint8
-	Uint16SliceField       []uint16
-	Uint32SliceField       []uint32
-	Uint64SliceField       []uint64
-	Float32SliceField      []float32
-	Float64SliceField      []float64
-	StructField            NestedTestStruct
-	StructSliceField       []NestedTestStruct
-	StringIntMapField      map[string]int
-	IntStringMapField      map[int]string
-	StringIntMapSliceField []map[string]int
-	StringPtrField         *string
-	IntPtrField            *int
+	StringField string
+	BoolField   bool
+	IntField    int
+	Int8Field   int8
+	Int16Field  int16
 }
 
 func main() {
@@ -75,56 +38,43 @@ func main() {
 		js.Global().Get("console").Call("log", Translate(msg...).String())
 	}
 
-	logger("Starting TinyReflect WebAssembly test")
-
 	// Initialize all fields with test values
 	strVal := "test string"
 	intVal := 42
 	data := TestStruct{
-		StringField:            strVal,
-		BoolField:              true,
-		IntField:               intVal,
-		Int8Field:              8,
-		Int16Field:             16,
-		Int32Field:             32,
-		Int64Field:             64,
-		UintField:              1,
-		Uint8Field:             8,
-		Uint16Field:            16,
-		Uint32Field:            32,
-		Uint64Field:            64,
-		Float32Field:           32.32,
-		Float64Field:           64.64,
-		StringSliceField:       []string{"a", "b"},
-		BoolSliceField:         []bool{true, false},
-		ByteSliceField:         []byte("bytes"),
-		IntSliceField:          []int{1, 2, 3},
-		Int8SliceField:         []int8{1, 2},
-		Int16SliceField:        []int16{1, 2},
-		Int32SliceField:        []int32{1, 2},
-		Int64SliceField:        []int64{1, 2},
-		UintSliceField:         []uint{1, 2},
-		Uint8SliceField:        []uint8{1, 2},
-		Uint16SliceField:       []uint16{1, 2},
-		Uint32SliceField:       []uint32{1, 2},
-		Uint64SliceField:       []uint64{1, 2},
-		Float32SliceField:      []float32{1.1, 2.2},
-		Float64SliceField:      []float64{1.1, 2.2},
-		StructField:            NestedTestStruct{NestedString: "nested", NestedInt: 99},
-		StructSliceField:       []NestedTestStruct{{NestedString: "n1", NestedInt: 1}, {NestedString: "n2", NestedInt: 2}},
-		StringIntMapField:      map[string]int{"key": 100},
-		IntStringMapField:      map[int]string{42: "value"},
-		StringIntMapSliceField: []map[string]int{{"k1": 1}, {"k2": 2}},
-		StringPtrField:         &strVal,
-		IntPtrField:            &intVal,
+		StringField: strVal,
+		BoolField:   true,
+		IntField:    intVal,
+		Int8Field:   8,
+		Int16Field:  16,
 	}
 
-	logger("TestStruct initialized with", len([]interface{}{}), "fields")
+	// First test with library tinyreflect
+	logger("=== Testing tinyreflect ===")
+	stdV := ValueOf(data)
+	stdT := stdV.Type()
+	stdNumFields, err := stdT.NumField()
+	if err != nil {
+		//logger("ERROR: NumField failed:", err)
+	}
 
-	// Test reflection functionality
+	logger("Found:", stdNumFields, "fields")
+
+	// Now test with tinyreflect
+	logger("=== Testing tinyreflect ===")
+	logger("DEBUG: About to call ValueOf")
 	v := ValueOf(data)
-	typ := v.Type()
+	logger("DEBUG: ValueOf returned, v.typ_ =", v.Type() != nil)
 
+	typ := v.Type()
+	logger("DEBUG: Type() returned, typ =", typ != nil)
+
+	if typ == nil {
+		logger("ERROR: Type() returned nil")
+		return
+	}
+
+	logger("DEBUG: About to call NumField")
 	numFields, err := typ.NumField()
 	if err != nil {
 		logger("ERROR: NumField failed:", err)
