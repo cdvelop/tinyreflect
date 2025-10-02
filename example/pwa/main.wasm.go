@@ -88,18 +88,23 @@ func main() {
 	resultsDiv.Set("innerHTML", Translate("Found ", numFields, " fields. Check console for details.").String())
 
 	// Test field access and print field information
+	logger("DEBUG: Starting field loop, numFields =", numFields)
 	for i := 0; i < numFields; i++ {
+		logger("DEBUG: Getting field", i)
 		field, err := v.Field(i)
 		if err != nil {
 			logger("ERROR: Field(", i, ") failed:", err)
 			continue
 		}
+		logger("DEBUG: Got field", i, "successfully")
 
+		logger("DEBUG: Getting field name for index", i)
 		fieldName, err := typ.NameByIndex(i)
 		if err != nil {
 			logger("ERROR: NameByIndex(", i, ") failed:", err)
 			continue
 		}
+		logger("DEBUG: Got field name:", fieldName)
 
 		// Get field value as string for logging
 		var valueStr string

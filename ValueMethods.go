@@ -20,7 +20,7 @@ func (v Value) Index(i int) (Value, error) {
 		}
 
 		elemType := arrayType.Elem
-		elemAddr := unsafe.Pointer(uintptr(v.ptr) + uintptr(i)*elemType.Size)
+		elemAddr := unsafe.Pointer(uintptr(v.ptr) + uintptr(i)*getElemSize(elemType))
 		fl := v.flag&^flagKindMask | flag(elemType.Kind()) | flagIndir | flagAddr
 		return Value{elemType, elemAddr, fl}, nil
 
@@ -35,7 +35,7 @@ func (v Value) Index(i int) (Value, error) {
 		}
 		sliceType := (*SliceType)(unsafe.Pointer(v.typ_))
 		elemType := sliceType.Elem
-		elemAddr := unsafe.Pointer(uintptr(sliceHeader.Data) + uintptr(i)*elemType.Size)
+		elemAddr := unsafe.Pointer(uintptr(sliceHeader.Data) + uintptr(i)*getElemSize(elemType))
 		fl := v.flag&^flagKindMask | flag(elemType.Kind()) | flagIndir | flagAddr
 		return Value{elemType, elemAddr, fl}, nil
 
@@ -117,25 +117,7 @@ func (v Value) IsNil() (bool, error) {
 	return false, Err(D.Call, D.Of, "IsNil", D.Method, v.kind().String(), D.Value)
 }
 
-// Addr returns a pointer value representing the address of v.
-// It returns an error if CanAddr would return false.
-func (v Value) Addr() (Value, error) {
-	if v.flag&flagAddr == 0 {
-		return Value{}, Err(D.Value, D.Not, "addressable")
-	}
-
-	if v.typ_ == nil {
-		return Value{}, Err(D.Value, D.Type, D.Nil)
-	}
-
-	ptrType := &PtrType{
-		Type: Type{Kind_: K.Pointer, Size: unsafe.Sizeof(uintptr(0))},
-		Elem: v.typ_,
-	}
-
-	fl := (v.flag & flagRO) | flag(K.Pointer)
-	return Value{&ptrType.Type, v.ptr, fl}, nil
-}
+// Addr method is implemented in ValueMethods_stdlib.go and ValueMethods_tinygo.go
 
 // Set assigns x to the value v.
 // It returns an error if CanSet would return false.
@@ -156,7 +138,7 @@ func (v Value) Set(x Value) error {
 		return Err(D.Value, D.Of, D.Type, x.typ_.String(), D.Not, "assignable", D.Type, v.typ_.String())
 	}
 
-	size := v.typ_.Size
+	size := getTypeSize(v.typ_)
 	if size == 0 {
 		return nil
 	}

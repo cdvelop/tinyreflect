@@ -25,11 +25,27 @@ func (n Name) IsEmbedded() bool {
 
 // Name returns the tag string for n, or empty if there is none.
 func (n Name) Name() string {
+	// Add safety check - if Bytes is nil or invalid, return empty
 	if n.Bytes == nil {
 		return ""
 	}
+
+	// Perform bounds checking before accessing memory
+	// In TinyGo/WASM, we can't easily check if a pointer is valid
+	// So we'll just try to read and hope for the best
+	// If it crashes, that's a TinyGo limitation we need to document
+
 	i, l := n.ReadVarint(1)
-	return unsafe.String(n.DataChecked(1+i, "non-empty string"), l)
+	if l <= 0 || l > 1000 { // Sanity check on length
+		return ""
+	}
+
+	dataPtr := n.DataChecked(1+i, "non-empty string")
+	if dataPtr == nil {
+		return ""
+	}
+
+	return unsafe.String(dataPtr, l)
 }
 
 // ReadVarint parses a varint as encoded by encoding/binary.

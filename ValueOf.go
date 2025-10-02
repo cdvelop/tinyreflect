@@ -104,23 +104,46 @@ func (v Value) NumField() (int, error) {
 	if st == nil {
 		return 0, Err(ref, D.Numbers, D.Fields, D.NotOfType, "Struct")
 	}
-	return len(st.Fields), nil
+	return st.numFields(), nil
 }
 
 // Field returns the i'th field of the struct v.
 // Returns an error if v is not a struct or i is out of range.
 func (v Value) Field(i int) (Value, error) {
-	if v.kind() != K.Struct {
+	// Get underlying type and cast to StructType
+	ut := v.typ().underlying()
+	tt := (*StructType)(unsafe.Pointer(ut))
+
+	if tt == nil {
+		println("DEBUG Value.Field: StructType is nil")
 		return Value{}, Err(ref, D.Value, D.NotOfType, "Struct")
 	}
 
-	// Direct reflection approach (no caching)
-	tt := (*StructType)(unsafe.Pointer(v.typ()))
-	if uint(i) >= uint(len(tt.Fields)) {
+	numFields := tt.numFields()
+	println("DEBUG Value.Field: numFields =", numFields, "requested i =", i)
+
+	// If no fields, verify it's actually supposed to be a struct
+	if numFields == 0 {
+		kind := ut.Kind()
+		println("DEBUG Value.Field: numFields=0, checking kind =", kind)
+		if kind != K.Struct {
+			return Value{}, Err(ref, D.Value, D.NotOfType, "Struct")
+		}
+	}
+
+	if uint(i) >= uint(numFields) {
+		println("DEBUG Value.Field: Index out of range")
 		return Value{}, Err(ref, D.Value, D.Index, D.Out, D.Of, D.Range)
 	}
-	field := &tt.Fields[i]
+
+	field := tt.getField(i)
+	println("DEBUG Value.Field: field =", field != nil)
+	if field == nil {
+		return Value{}, Err(ref, D.Field, "nil")
+	}
+
 	typ := field.Typ
+	println("DEBUG Value.Field: field.Typ =", typ != nil)
 
 	fl := v.flag&(flagStickyRO|flagIndir|flagAddr) | flag(typ.Kind())
 	if !field.Name.IsExported() {
@@ -131,6 +154,7 @@ func (v Value) Field(i int) (Value, error) {
 		}
 	}
 	ptr := add(v.ptr, field.Off, "same as non-reflect &v.field")
+	println("DEBUG Value.Field: Returning field successfully")
 	return Value{typ, ptr, fl}, nil
 }
 
